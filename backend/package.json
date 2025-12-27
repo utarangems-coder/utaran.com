@@ -10,6 +10,19 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "expresss": "^0.0.0"
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cros": "^1.1.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.2.1",
+    "expresss": "^0.0.0",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.8.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.0.2",
+    "nodemailer": "^7.0.12",
+    "nodemon": "^3.1.11",
+    "zod": "^4.2.1"
   }
 }
