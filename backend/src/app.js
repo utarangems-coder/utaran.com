@@ -5,6 +5,12 @@ import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 
+import authRoutes from "./routes/auth.routes.js";
+import productRoutes from "./routes/product.routes.js";
+import orderRoutes from "./routes/order.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
+
 import { errorHandler } from "./middlewares/error.middleware.js";
 
 dotenv.config();
@@ -24,6 +30,11 @@ app.use(
     credentials: true,
   })
 );
+app.use(
+  "/api/payments/webhook",
+  express.raw({ type: "application/json" })
+);
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -34,6 +45,12 @@ app.get("/health", (req, res) => {
     timestamp: new Date(),
   });
 });
+
+app.use("/api/auth", authRoutes);
+app.use("/api/", productRoutes);
+app.use("/api/", orderRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.use(errorHandler);
 
