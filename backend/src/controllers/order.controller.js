@@ -1,10 +1,12 @@
 import Order from "../models/Order.model.js";
 import Product from "../models/Product.model.js";
+import { isValidObjectId } from "../utils/isValidObject.js";
+import {asyncHandler} from "../utils/asyncHandler.js"; 
 
-export const createOrder = async (req, res) => {
+export const createOrder = asyncHandler(async (req, res) => {
   const { items } = req.body;
 
-  if (!items || items.length === 0) {
+  if (!items?.length) {
     return res.status(400).json({ message: "No items in order" });
   }
 
@@ -12,14 +14,22 @@ export const createOrder = async (req, res) => {
   const orderItems = [];
 
   for (const item of items) {
-    const product = await Product.findById(item.productId);
-
-    if (!product || !product.isActive) {
-      return res.status(400).json({ message: "Invalid product" });
+    if (!isValidObjectId(item.productId)) {
+      return res.status(400).json({ message: "Invalid product id" });
     }
 
-    if (product.quantity < item.quantity) {
-      return res.status(400).json({ message: "Insufficient stock" });
+    const product = await Product.findOneAndUpdate(
+      {
+        _id: item.productId,
+        isActive: true,
+        quantity: { $gte: item.quantity },
+      },
+      { $inc: { quantity: -item.quantity } }, 
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(400).json({ message: "Product out of stock" });
     }
 
     totalAmount += product.price * item.quantity;
@@ -39,22 +49,22 @@ export const createOrder = async (req, res) => {
   });
 
   res.status(201).json(order);
-};
+});
 
-export const getMyOrders = async (req, res) => {
+export const getMyOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find({ user: req.user.id }).sort("-createdAt");
   res.json(orders);
-};
+});
 
-export const getAllOrders = async (req, res) => {
+export const getAllOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find()
     .populate("user", "email")
     .sort("-createdAt");
 
   res.json(orders);
-};
+});
 
-export const getOrderById = async (req, res) => {
+export const getOrderById = asyncHandler(async (req, res) => {
   const order = await Order.findOne({
     _id: req.params.id,
     user: req.user.id,
@@ -65,9 +75,9 @@ export const getOrderById = async (req, res) => {
   }
 
   res.json(order);
-};
+});
 
-export const updateOrderStatus = async (req, res) => {
+export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
   const order = await Order.findByIdAndUpdate(
@@ -77,17 +87,17 @@ export const updateOrderStatus = async (req, res) => {
   );
 
   res.json(order);
-};
+});
 
-export const getOrdersByUser = async (req, res) => {
+export const getOrdersByUser = asyncHandler(async (req, res) => {
   const orders = await Order.find({ user: req.params.userId }).sort(
     "-createdAt"
   );
 
   res.json(orders);
-};
+});
 
-export const cancelOrder = async (req, res) => {
+export const cancelOrder = asyncHandler(async (req, res) => {
   const order = await Order.findOne({
     _id: req.params.id,
     user: req.user.id,
@@ -97,12 +107,22 @@ export const cancelOrder = async (req, res) => {
     return res.status(404).json({ message: "Order not found" });
   }
 
-  if (order.status !== "PENDING") {
-    return res.status(400).json({ message: "Order cannot be cancelled now" });
+  if (order.paymentStatus === "PAID") {
+    return res.status(400).json({ message: "Cannot cancel paid order" });
   }
 
-  order.status = "CANCELLED";
+  if (order.fulfillmentStatus !== "PENDING") {
+    return res.status(400).json({ message: "Order cannot be cancelled" });
+  }
+
+  for (const item of order.items) {
+    await Product.findByIdAndUpdate(item.product, {
+      $inc: { quantity: item.quantity },
+    });
+  }
+
+  order.fulfillmentStatus = "CANCELLED";
   await order.save();
 
   res.json({ message: "Order cancelled successfully" });
-};
+});

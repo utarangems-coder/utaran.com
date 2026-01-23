@@ -4,8 +4,9 @@ import Order from "../models/Order.model.js";
 import Refund from "../models/Refund.model.js";
 import Product from "../models/Product.model.js";
 import { logPaymentEvent } from "../services/paymentAudit.service.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-export const razorpayWebhook = async (req, res) => {
+export const razorpayWebhook = asyncHandler(async (req, res) => {
   let event;
 
   try {
@@ -34,9 +35,7 @@ export const razorpayWebhook = async (req, res) => {
         providerOrderId: entity.order_id,
       });
 
-      if (!payment) return res.json({ ok: true });
-
-      if (payment.status === "SUCCESS") {
+      if (!payment || payment.status === "SUCCESS") {
         return res.json({ ok: true });
       }
 
@@ -44,27 +43,46 @@ export const razorpayWebhook = async (req, res) => {
       payment.status = "SUCCESS";
       await payment.save();
 
-      const order = await Order.findById(payment.order);
-      if (order.paymentStatus !== "PAID") {
-        order.paymentStatus = "PAID";
-        await order.save();
+      const user = await User.findById(payment.user).populate("cart.product");
 
-        // Deduct inventory ONCE
-        for (const item of order.items) {
-          await Product.findByIdAndUpdate(item.product, {
-            $inc: { quantity: -item.quantity },
-          });
-        }
+      if (!user || user.cart.length === 0) return res.json({ ok: true });
+
+      // 1️⃣ Create order NOW
+      const order = await Order.create({
+        user: user._id,
+        items: user.cart.map((item) => ({
+          product: item.product._id,
+          title: item.product.title,
+          price: item.product.price,
+          quantity: item.quantity,
+        })),
+        totalAmount: payment.amount,
+        paymentStatus: "PAID",
+      });
+
+      payment.order = order._id;
+      await payment.save();
+
+      // 2️⃣ Reduce inventory NOW
+      for (const item of user.cart) {
+        await Product.findByIdAndUpdate(item.product._id, {
+          $inc: { quantity: -item.quantity },
+        });
       }
+
+      // 3️⃣ Clear cart
+      user.cart = [];
+      await user.save();
 
       await logPaymentEvent({
         order: order._id,
-        user: order.user,
+        user: user._id,
         eventType: "PAYMENT_SUCCESS",
-        providerRef: entity.id,
         amount: payment.amount,
         metadata: entity,
       });
+
+      return res.json({ ok: true });
     }
 
     if (event.event === "payment.failed") {
@@ -88,8 +106,17 @@ export const razorpayWebhook = async (req, res) => {
         providerRef: entity.id,
         metadata: entity,
       });
+
+      // const order = await Order.findById(payment.order);
+      // if (order && order.fulfillmentStatus === "PENDING") {
+      //   for (const item of order.items) {
+      //     await Product.findByIdAndUpdate(item.product, {
+      //       $inc: { quantity: item.quantity },
+      //     });
+      //   }
+      // }
     }
-    
+
     if (event.event === "refund.processed") {
       const entity = event.payload.refund.entity;
 
@@ -116,9 +143,7 @@ export const razorpayWebhook = async (req, res) => {
 
         const order = await Order.findById(payment.order);
         order.paymentStatus =
-          payment.status === "REFUNDED"
-            ? "REFUNDED"
-            : "PARTIALLY_REFUNDED";
+          payment.status === "REFUNDED" ? "REFUNDED" : "PARTIALLY_REFUNDED";
 
         await order.save();
 
@@ -149,4 +174,4 @@ export const razorpayWebhook = async (req, res) => {
     console.error("Webhook processing error", err);
     return res.json({ ok: true });
   }
-};
+});

@@ -1,50 +1,78 @@
 import Payment from "../models/Payment.model.js";
 import Order from "../models/Order.model.js";
+import Refund from "../models/Refund.model.js";
 import { razorpay } from "../services/payment.service.js";
+import { logPaymentEvent } from "../services/paymentAudit.service.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-export const createPayment = async (req, res) => {
-  const { orderId } = req.body;
-
-  const order = await Order.findById(orderId);
-  if (!order) {
-    return res.status(404).json({ message: "Order not found" });
+export const createPayment = asyncHandler(async (req, res) => {
+  if (!razorpay) {
+    return res.status(503).json({ message: "Payments not enabled" });
   }
 
-  if (order.paymentStatus !== "PENDING") {
-    return res.status(400).json({ message: "Order already paid or refunded" });
+  if (req.user.role === "admin") {
+    return res.status(403).json({ message: "Admins cannot place orders" });
   }
 
+  const user = await User.findById(req.user.id).populate("cart.product");
+
+  if (!user.cart || user.cart.length === 0) {
+    return res.status(400).json({ message: "Cart is empty" });
+  }
+
+  let totalAmount = 0;
+
+  for (const item of user.cart) {
+    if (!item.product || !item.product.isActive) {
+      return res.status(400).json({ message: "Invalid product in cart" });
+    }
+
+    if (item.product.quantity < item.quantity) {
+      return res.status(400).json({
+        message: `${item.product.title} is out of stock`,
+      });
+    }
+
+    totalAmount += item.product.price * item.quantity;
+  }
+
+  // Idempotency: reuse existing processing payment
   const existingPayment = await Payment.findOne({
-    order: order._id,
+    user: user._id,
     status: { $in: ["INITIATED", "PROCESSING"] },
   });
 
   if (existingPayment) {
-    // Idempotent response
     return res.json({
       razorpayOrderId: existingPayment.providerOrderId,
-      amount: order.totalAmount * 100,
+      amount: totalAmount * 100,
       currency: "INR",
       key: process.env.RAZORPAY_KEY_ID,
     });
   }
 
   const payment = await Payment.create({
-    order: order._id,
-    user: req.user.id,
+    user: user._id,
     provider: "RAZORPAY",
-    amount: order.totalAmount,
+    amount: totalAmount,
     status: "PROCESSING",
   });
 
   const razorpayOrder = await razorpay.orders.create({
-    amount: order.totalAmount * 100,
+    amount: totalAmount * 100,
     currency: "INR",
-    receipt: payment._id.toString(), 
+    receipt: payment._id.toString(),
   });
 
   payment.providerOrderId = razorpayOrder.id;
   await payment.save();
+
+  await logPaymentEvent({
+    order: null,
+    user: user._id,
+    eventType: "PAYMENT_INITIATED",
+    amount: totalAmount,
+  });
 
   res.json({
     key: process.env.RAZORPAY_KEY_ID,
@@ -52,10 +80,13 @@ export const createPayment = async (req, res) => {
     amount: razorpayOrder.amount,
     currency: razorpayOrder.currency,
   });
-};
+});
 
-export const refundPayment = async (req, res) => {
-  const { paymentId, amount } = req.body; 
+export const refundPayment = asyncHandler(async (req, res) => {
+  if (!razorpay) {
+    return res.status(503).json({ message: "Payments not enabled" });
+  }
+  const { paymentId, amount } = req.body;
 
   const payment = await Payment.findById(paymentId);
   if (!payment) {
@@ -84,8 +115,8 @@ export const refundPayment = async (req, res) => {
     const razorpayRefund = await razorpay.payments.refund(
       payment.providerPaymentId,
       {
-        amount: amount * 100, 
-      }
+        amount: amount * 100,
+      },
     );
 
     refund.providerRefundId = razorpayRefund.id;
@@ -119,4 +150,4 @@ export const refundPayment = async (req, res) => {
 
     throw err;
   }
-};
+});

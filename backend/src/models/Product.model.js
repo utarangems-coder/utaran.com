@@ -32,8 +32,7 @@ const productSchema = new mongoose.Schema(
 
     images: [
       {
-        type: String, 
-        required: true,
+        type: String,
       },
     ],
 
@@ -42,12 +41,21 @@ const productSchema = new mongoose.Schema(
       index: true,
     },
 
+    tags: [
+      {
+        type: String,
+        lowercase: true,
+        trim: true,
+        index: true,
+      },
+    ],
+
     isActive: {
       type: Boolean,
       default: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Product", productSchema);

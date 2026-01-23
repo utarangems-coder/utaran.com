@@ -5,9 +5,11 @@ import {
   updateProduct,
   deleteProduct,
   restoreProduct,
+  getProductById,
 } from "../controllers/product.controller.js";
 
 import { protect, adminOnly } from "../middlewares/auth.middleware.js";
+import { upload } from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -15,9 +17,10 @@ const router = express.Router();
 router.get("/products", getAllProducts);
 
 /* Admin */
-router.post("/admin/products", protect, adminOnly, createProduct);
-router.put("/admin/products/:id", protect, adminOnly, updateProduct);
+router.post("/admin/products", protect, adminOnly, upload.array("images", 5), createProduct);
+router.put("/admin/products/:id", protect, adminOnly, upload.array("images", 5), updateProduct);
 router.delete("/admin/products/:id", protect, adminOnly, deleteProduct);
 router.patch("/admin/products/:id/restore", protect, adminOnly, restoreProduct);
+router.get("/products/:id", getProductById);
 
 export default router;

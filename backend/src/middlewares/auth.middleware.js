@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
+import User from "../models/User.model.js";
 
-export const protect = (req, res, next) => {
+export const protect = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -10,15 +12,24 @@ export const protect = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    req.user = decoded;
+
+    const user = await User.findById(decoded.id).select(
+      "name email role address createdAt"
+    );
+
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    req.user = user; 
     next();
-  } catch {
-    res.status(401).json({ message: "Invalid token" });
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid token" });
   }
 };
 
 export const adminOnly = (req, res, next) => {
-  if (req.user?.role !== "admin") {
+  if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Admin access required" });
   }
   next();
