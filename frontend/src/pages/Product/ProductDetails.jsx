@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchProductById } from "../../api/product.api";
-import { createOrder } from "../../api/order.api";
 import { addToCart } from "../../api/cart.api";
 
 export default function ProductDetails() {
@@ -29,23 +28,13 @@ export default function ProductDetails() {
     }
   };
 
-  const handleBuyNow = async () => {
-    if (!product) return;
-
-    try {
-      const order = await createOrder([
-        {
-          productId: product._id,
-          quantity,
-        },
-      ]);
-
-      navigate("/checkout", {
-        state: { orderId: order._id },
-      });
-    } catch (err) {
-      alert(err.response?.data?.message || "Unable to create order");
-    }
+  const handleBuyNow = () => {
+    navigate("/checkout", {
+      state: {
+        productId: product._id,
+        quantity,
+      },
+    });
   };
 
   if (loading) {

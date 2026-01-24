@@ -1,6 +1,10 @@
 import api from "./axios";
 
-export const createPayment = async (orderId) => {
-  const res = await api.post("/payments/create", { orderId });
+export const createPayment = async ({ productId, quantity }) => {
+  const res = await api.post("/payments/create", {
+    productId,
+    quantity,
+  });
   return res.data;
 };
+
