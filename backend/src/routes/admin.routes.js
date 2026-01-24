@@ -13,5 +13,11 @@ router.get(
   getPaymentLogsByOrder
 );
 
+router.get(
+  "/reservations",
+  protect,
+  adminOnly,
+  getReservations
+);
 
 export default router;

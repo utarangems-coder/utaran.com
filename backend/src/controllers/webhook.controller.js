@@ -6,6 +6,7 @@ import Product from "../models/Product.model.js";
 import { logPaymentEvent } from "../services/paymentAudit.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import User from "../models/User.model.js";
+import Reservation from "../models/Reservation.model.js";
 
 export const razorpayWebhook = asyncHandler(async (req, res) => {
   let event;
@@ -40,43 +41,28 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
         return res.json({ ok: true });
       }
 
-      payment.providerPaymentId = entity.id;
       payment.status = "SUCCESS";
+      payment.providerPaymentId = entity.id;
       await payment.save();
 
-      const user = await User.findById(payment.user);
-      if (!user) return res.json({ ok: true });
+      const reservationId = entity.notes?.reservationId;
+      const reservation =
+        await Reservation.findById(reservationId).populate("product");
 
-      const { productId, quantity } = entity.notes;
-
-      const product = await Product.findOneAndUpdate(
-        {
-          _id: productId,
-          quantity: { $gte: quantity },
-        },
-        { $inc: { quantity: -quantity } },
-        { new: true },
-      );
-
-      if (!product) {
-        await logPaymentEvent({
-          order: null,
-          user: user._id,
-          eventType: "PAYMENT_FAILED",
-          providerRef: entity.id,
-          metadata: "Inventory mismatch",
-        });
+      if (!reservation || reservation.status !== "ACTIVE") {
+        // Payment succeeded but reservation expired → admin can refund later
         return res.json({ ok: true });
       }
 
+      // Create order
       const order = await Order.create({
-        user: user._id,
+        user: reservation.user,
         items: [
           {
-            product: product._id,
-            title: product.title,
-            price: product.price,
-            quantity,
+            product: reservation.product._id,
+            title: reservation.product.title,
+            price: reservation.product.price,
+            quantity: reservation.quantity,
           },
         ],
         totalAmount: payment.amount,
@@ -86,17 +72,19 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
       payment.order = order._id;
       await payment.save();
 
+      reservation.status = "COMPLETED";
+      await reservation.save();
+
       await logPaymentEvent({
         order: order._id,
-        user: user._id,
+        user: reservation.user,
         eventType: "PAYMENT_SUCCESS",
         providerRef: entity.id,
         amount: payment.amount,
       });
 
-      res.json({ ok: true });
+      return res.json({ ok: true });
     }
-
     if (event.event === "payment.failed") {
       const entity = event.payload.payment.entity;
 
@@ -106,9 +94,22 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
 
       if (!payment) return res.json({ ok: true });
 
-      if (payment.status !== "FAILED") {
-        payment.status = "FAILED";
-        await payment.save();
+      payment.status = "FAILED";
+      await payment.save();
+
+      const reservation = await Reservation.findOne({
+        payment: payment._id,
+        status: "ACTIVE",
+      });
+
+      if (reservation) {
+        // 🔓 Restore stock immediately
+        await Product.findByIdAndUpdate(reservation.product, {
+          $inc: { quantity: reservation.quantity },
+        });
+
+        reservation.status = "EXPIRED";
+        await reservation.save();
       }
 
       await logPaymentEvent({
@@ -119,16 +120,8 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
         metadata: entity,
       });
 
-      // const order = await Order.findById(payment.order);
-      // if (order && order.fulfillmentStatus === "PENDING") {
-      //   for (const item of order.items) {
-      //     await Product.findByIdAndUpdate(item.product, {
-      //       $inc: { quantity: item.quantity },
-      //     });
-      //   }
-      // }
+      return res.json({ ok: true });
     }
-
     if (event.event === "refund.processed") {
       const entity = event.payload.refund.entity;
 
@@ -136,40 +129,48 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
         providerRefundId: entity.id,
       });
 
-      if (!refund) return res.json({ ok: true });
+      if (!refund || refund.status === "COMPLETED") {
+        return res.json({ ok: true });
+      }
 
-      if (refund.status !== "COMPLETED") {
-        refund.status = "COMPLETED";
-        await refund.save();
+      refund.status = "COMPLETED";
+      await refund.save();
 
-        const payment = await Payment.findById(refund.payment);
-        payment.refundedAmount += refund.amount;
+      const payment = await Payment.findById(refund.payment);
+      payment.refundedAmount += refund.amount;
 
-        if (payment.refundedAmount < payment.amount) {
-          payment.status = "PARTIALLY_REFUNDED";
-        } else {
-          payment.status = "REFUNDED";
-        }
+      payment.status =
+        payment.refundedAmount < payment.amount
+          ? "PARTIALLY_REFUNDED"
+          : "REFUNDED";
 
-        await payment.save();
+      await payment.save();
 
-        const order = await Order.findById(payment.order);
+      const order = await Order.findById(payment.order);
+
+      if (order) {
         order.paymentStatus =
           payment.status === "REFUNDED" ? "REFUNDED" : "PARTIALLY_REFUNDED";
-
         await order.save();
 
-        await logPaymentEvent({
-          order: order._id,
-          user: order.user,
-          eventType: "REFUND_SUCCESS",
-          providerRef: entity.id,
-          amount: refund.amount,
-          metadata: entity,
-        });
+        // 🔄 Restore inventory on refund
+        for (const item of order.items) {
+          await Product.findByIdAndUpdate(item.product, {
+            $inc: { quantity: item.quantity },
+          });
+        }
       }
-    }
 
+      await logPaymentEvent({
+        order: order?._id,
+        user: order?.user,
+        eventType: "REFUND_SUCCESS",
+        providerRef: entity.id,
+        amount: refund.amount,
+        metadata: entity,
+      });
+      return res.json({ ok: true });
+    }
     if (event.event === "dispute.created" || event.event === "dispute.closed") {
       await logPaymentEvent({
         order: null,

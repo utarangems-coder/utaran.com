@@ -3,6 +3,7 @@ import Product from "../models/Product.model.js";
 import User from "../models/User.model.js";
 import PaymentLog from "../models/PaymentLog.model.js";
 import {asyncHandler} from "../utils/asyncHandler.js";
+import Reservation from "../models/Reservation.model.js";
 
 export const getAdminSummary = asyncHandler(async (req, res) => {
   const totalOrders = await Order.countDocuments();
@@ -24,3 +25,31 @@ export const getPaymentLogsByOrder = asyncHandler(async (req, res) => {
   res.json(logs);
 });
 
+export const getReservations = asyncHandler(async (req, res) => {
+  const { status, page = 1, limit = 20 } = req.query;
+
+  const query = {};
+  if (status) query.status = status;
+
+  const skip = (page - 1) * limit;
+
+  const [reservations, total] = await Promise.all([
+    Reservation.find(query)
+      .populate("user", "email")
+      .populate("product", "title")
+      .sort("-createdAt")
+      .skip(skip)
+      .limit(Number(limit)),
+    Reservation.countDocuments(query),
+  ]);
+
+  res.json({
+    data: reservations,
+    pagination: {
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / limit),
+    },
+  });
+});

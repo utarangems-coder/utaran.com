@@ -6,6 +6,7 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
+import cron from "node-cron";
 
 import authRoutes from "./routes/auth.routes.js";
 import productRoutes from "./routes/product.routes.js";
@@ -16,6 +17,7 @@ import userRoutes from "./routes/user.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 
 import { errorHandler } from "./middlewares/error.middleware.js";
+import { cleanupExpiredReservations } from "./services/reservationCleanup.Job.js";
 
 const app = express();
 
@@ -41,6 +43,14 @@ app.use(
 );
 
 app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
+
+cron.schedule("*/1 * * * *", async () => {
+  try {
+    await cleanupExpiredReservations();
+  } catch (err) {
+    console.error("Reservation cleanup failed", err);
+  }
+});
 
 app.use(express.json());
 app.use(cookieParser());
