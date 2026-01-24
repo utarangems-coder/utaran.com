@@ -5,6 +5,7 @@ import Refund from "../models/Refund.model.js";
 import Product from "../models/Product.model.js";
 import { logPaymentEvent } from "../services/paymentAudit.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import User from "../models/User.model.js";
 
 export const razorpayWebhook = asyncHandler(async (req, res) => {
   let event;
@@ -43,19 +44,41 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
       payment.status = "SUCCESS";
       await payment.save();
 
-      const user = await User.findById(payment.user).populate("cart.product");
+      const user = await User.findById(payment.user);
+      if (!user) return res.json({ ok: true });
 
-      if (!user || user.cart.length === 0) return res.json({ ok: true });
+      const { productId, quantity } = entity.notes;
 
-      // 1️⃣ Create order NOW
+      const product = await Product.findOneAndUpdate(
+        {
+          _id: productId,
+          quantity: { $gte: quantity },
+        },
+        { $inc: { quantity: -quantity } },
+        { new: true },
+      );
+
+      if (!product) {
+        await logPaymentEvent({
+          order: null,
+          user: user._id,
+          eventType: "PAYMENT_FAILED",
+          providerRef: entity.id,
+          metadata: "Inventory mismatch",
+        });
+        return res.json({ ok: true });
+      }
+
       const order = await Order.create({
         user: user._id,
-        items: user.cart.map((item) => ({
-          product: item.product._id,
-          title: item.product.title,
-          price: item.product.price,
-          quantity: item.quantity,
-        })),
+        items: [
+          {
+            product: product._id,
+            title: product.title,
+            price: product.price,
+            quantity,
+          },
+        ],
         totalAmount: payment.amount,
         paymentStatus: "PAID",
       });
@@ -63,26 +86,15 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
       payment.order = order._id;
       await payment.save();
 
-      // 2️⃣ Reduce inventory NOW
-      for (const item of user.cart) {
-        await Product.findByIdAndUpdate(item.product._id, {
-          $inc: { quantity: -item.quantity },
-        });
-      }
-
-      // 3️⃣ Clear cart
-      user.cart = [];
-      await user.save();
-
       await logPaymentEvent({
         order: order._id,
         user: user._id,
         eventType: "PAYMENT_SUCCESS",
+        providerRef: entity.id,
         amount: payment.amount,
-        metadata: entity,
       });
 
-      return res.json({ ok: true });
+      res.json({ ok: true });
     }
 
     if (event.event === "payment.failed") {

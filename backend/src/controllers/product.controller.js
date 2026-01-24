@@ -9,15 +9,47 @@ export const createProduct = asyncHandler(async (req, res) => {
 });
 
 export const getAllProducts = asyncHandler(async (req, res) => {
-  const page = Number(req.query.page) || 1;
-  const limit = 12;
+  const {
+    page = 1,
+    limit = 12,
+    search,
+    category,
+    tags,
+  } = req.query;
+
+  const query = { isActive: true };
+
+  if (category) {
+    query.category = category;
+  }
+
+  if (tags) {
+    query.tags = { $in: tags.split(",") };
+  }
+
+  if (search) {
+    query.$text = { $search: search };
+  }
+
   const skip = (page - 1) * limit;
 
-  const products = await Product.find({ isActive: true })
-    .skip(skip)
-    .limit(limit);
+  const [products, total] = await Promise.all([
+    Product.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit)),
+    Product.countDocuments(query),
+  ]);
 
-  res.json(products);
+  res.json({
+    data: products,
+    pagination: {
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / limit),
+    },
+  });
 });
 
 export const updateProduct = asyncHandler(async (req, res) => {

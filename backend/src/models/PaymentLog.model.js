@@ -51,4 +51,7 @@ const paymentLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+paymentLogSchema.index({ order: 1, createdAt: -1 });
+paymentLogSchema.index({ eventType: 1 });
+
 export default mongoose.model("PaymentLog", paymentLogSchema);

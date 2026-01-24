@@ -1,5 +1,6 @@
 import Payment from "../models/Payment.model.js";
 import Order from "../models/Order.model.js";
+import User from "../models/User.model.js";
 import Refund from "../models/Refund.model.js";
 import { razorpay } from "../services/payment.service.js";
 import { logPaymentEvent } from "../services/paymentAudit.service.js";
@@ -10,58 +11,44 @@ export const createPayment = asyncHandler(async (req, res) => {
     return res.status(503).json({ message: "Payments not enabled" });
   }
 
-  if (req.user.role === "admin") {
-    return res.status(403).json({ message: "Admins cannot place orders" });
+  const { productId, quantity } = req.body;
+
+  if (!productId || !quantity || quantity < 1) {
+    return res.status(400).json({ message: "Invalid request" });
   }
 
-  const user = await User.findById(req.user.id).populate("cart.product");
-
-  if (!user.cart || user.cart.length === 0) {
-    return res.status(400).json({ message: "Cart is empty" });
-  }
-
-  let totalAmount = 0;
-
-  for (const item of user.cart) {
-    if (!item.product || !item.product.isActive) {
-      return res.status(400).json({ message: "Invalid product in cart" });
-    }
-
-    if (item.product.quantity < item.quantity) {
-      return res.status(400).json({
-        message: `${item.product.title} is out of stock`,
-      });
-    }
-
-    totalAmount += item.product.price * item.quantity;
-  }
-
-  // Idempotency: reuse existing processing payment
-  const existingPayment = await Payment.findOne({
-    user: user._id,
-    status: { $in: ["INITIATED", "PROCESSING"] },
+  const product = await Product.findOne({
+    _id: productId,
+    isActive: true,
   });
 
-  if (existingPayment) {
-    return res.json({
-      razorpayOrderId: existingPayment.providerOrderId,
-      amount: totalAmount * 100,
-      currency: "INR",
-      key: process.env.RAZORPAY_KEY_ID,
-    });
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
   }
 
+  if (product.quantity < quantity) {
+    return res.status(400).json({ message: "Insufficient stock" });
+  }
+
+  const amount = product.price * quantity;
+
+  // Create Payment (NO ORDER YET)
   const payment = await Payment.create({
-    user: user._id,
+    user: req.user.id,
     provider: "RAZORPAY",
-    amount: totalAmount,
+    amount,
     status: "PROCESSING",
   });
 
   const razorpayOrder = await razorpay.orders.create({
-    amount: totalAmount * 100,
+    amount: amount * 100,
     currency: "INR",
     receipt: payment._id.toString(),
+    notes: {
+      productId: product._id.toString(),
+      quantity: quantity.toString(),
+      userId: req.user.id.toString(),
+    },
   });
 
   payment.providerOrderId = razorpayOrder.id;
@@ -69,9 +56,10 @@ export const createPayment = asyncHandler(async (req, res) => {
 
   await logPaymentEvent({
     order: null,
-    user: user._id,
-    eventType: "PAYMENT_INITIATED",
-    amount: totalAmount,
+    user: req.user.id,
+    eventType: "PAYMENT_INTENT_CREATED",
+    providerRef: razorpayOrder.id,
+    amount,
   });
 
   res.json({
