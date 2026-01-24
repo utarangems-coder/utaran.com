@@ -38,11 +38,11 @@ const reservationSchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       required: true,
-      index: { expires: 0 },
     },
   },
   { timestamps: true }
 );
 
+reservationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export default mongoose.model("Reservation", reservationSchema);

@@ -6,7 +6,6 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      index: true,
     },
 
     items: [
@@ -38,6 +37,7 @@ const orderSchema = new mongoose.Schema(
       type: String,
       enum: ["PENDING", "SHIPPED", "DELIVERED", "CANCELLED"],
       default: "PENDING",
+      index: true,
     },
   },
   { timestamps: true }
@@ -45,7 +45,5 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ user: 1, createdAt: -1 });
-orderSchema.index({ paymentStatus: 1 });
-orderSchema.index({ fulfillmentStatus: 1 });
 
 export default mongoose.model("Order", orderSchema);

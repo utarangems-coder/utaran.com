@@ -1,5 +1,5 @@
 import express from "express";
-import { getAdminSummary,getPaymentLogsByOrder } from "../controllers/admin.controller.js";
+import { getAdminSummary,getPaymentLogsByOrder, getReservations } from "../controllers/admin.controller.js";
 import { protect, adminOnly } from "../middlewares/auth.middleware.js";
 
 const router = express.Router();

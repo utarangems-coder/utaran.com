@@ -38,7 +38,6 @@ const productSchema = new mongoose.Schema(
 
     category: {
       type: String,
-      index: true,
     },
 
     tags: [

@@ -61,9 +61,6 @@ const paymentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-paymentSchema.index({ providerOrderId: 1 }, { unique: true });
-paymentSchema.index({ providerPaymentId: 1 });
-paymentSchema.index({ status: 1 });
 paymentSchema.index({ user: 1, createdAt: -1 });
 
 export default mongoose.model("Payment", paymentSchema);
