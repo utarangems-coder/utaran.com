@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
-import api from "../../api/axios";
 import { getMyOrders } from "../../api/order.api";
+
+const StatusPill = ({ label }) => (
+  <span className="px-3 py-1 text-xs tracking-wide rounded-full border border-[#2a2a2a] text-gray-300">
+    {label}
+  </span>
+);
 
 export default function UserOrders() {
   const [orders, setOrders] = useState([]);
@@ -12,8 +17,8 @@ export default function UserOrders() {
 
   const loadOrders = async () => {
     try {
-      const data = await getMyOrders();
-      setOrders(data.data);
+      const res = await getMyOrders();
+      setOrders(res.data);
     } catch {
       console.error("Failed to load orders");
     } finally {
@@ -22,11 +27,19 @@ export default function UserOrders() {
   };
 
   if (loading) {
-    return <p className="text-gray-400">Loading orders...</p>;
+    return (
+      <p className="text-gray-400 text-sm">
+        Loading your orders…
+      </p>
+    );
   }
 
   if (orders.length === 0) {
-    return <p className="text-gray-400">No orders yet.</p>;
+    return (
+      <p className="text-gray-400 text-sm">
+        You haven’t placed any orders yet.
+      </p>
+    );
   }
 
   return (
@@ -34,18 +47,28 @@ export default function UserOrders() {
       {orders.map((order) => (
         <div
           key={order._id}
-          className="bg-[#0b0b0b] border border-[#2a2a2a] p-4 rounded"
+          className="bg-[#0b0b0b] border border-[#2a2a2a] rounded p-5"
         >
-          <div className="flex justify-between mb-3">
-            <span className="text-sm text-gray-400">
-              Order ID: {order._id.slice(-6)}
-            </span>
-            <span className="text-sm">
-              ₹{order.totalAmount}
-            </span>
+          {/* HEADER */}
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-xs text-gray-500 tracking-wide">
+                Order #{order._id.slice(-6).toUpperCase()}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {new Date(order.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+
+            <div className="text-right">
+              <p className="text-sm text-white">
+                ₹{order.totalAmount}
+              </p>
+            </div>
           </div>
 
-          <div className="space-y-1 text-sm text-gray-400">
+          {/* ITEMS */}
+          <div className="space-y-2 text-sm text-gray-400 mb-4">
             {order.items.map((item) => (
               <div
                 key={item.product}
@@ -61,19 +84,14 @@ export default function UserOrders() {
             ))}
           </div>
 
-          <div className="flex justify-between mt-4 text-sm">
-            <span>
-              Payment:{" "}
-              <span className="text-white">
-                {order.paymentStatus}
-              </span>
-            </span>
-            <span>
-              Status:{" "}
-              <span className="text-white">
-                {order.fulfillmentStatus}
-              </span>
-            </span>
+          {/* STATUS */}
+          <div className="flex justify-between items-center text-xs">
+            <div className="flex gap-3">
+              <StatusPill label={`Payment: ${order.paymentStatus}`} />
+              <StatusPill
+                label={`Status: ${order.fulfillmentStatus}`}
+              />
+            </div>
           </div>
         </div>
       ))}

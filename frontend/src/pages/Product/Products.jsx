@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { fetchProducts } from "../../api/product.api";
 import useDebounce from "../../hooks/useDebounce";
 import ProductSkeleton from "../../components/ProductSkeleton";
-import { PRODUCT_CATEGORIES } from "../../../../backend/src/utils/categories.js";
+import { PRODUCT_CATEGORIES } from "../../api/categoryConstant";
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest" },

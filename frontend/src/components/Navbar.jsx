@@ -18,7 +18,7 @@ export default function Navbar() {
           to="/"
           className="text-xl tracking-[0.2em] uppercase text-gray-900 hover:text-black transition"
         >
-          Pieds de Fée
+          UTARAN
         </Link>
 
         {/* Links */}
@@ -39,15 +39,15 @@ export default function Navbar() {
 
           {user ? (
             <>
+              <Link to="/cart" className="hover:text-black transition">
+                Cart
+              </Link>
+
               <Link
                 to="/dashboard"
                 className="hover:text-black transition-colors duration-200"
               >
                 Account
-              </Link>
-
-              <Link to="/cart" className="hover:text-black transition">
-                Cart
               </Link>
 
               <button

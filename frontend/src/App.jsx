@@ -12,7 +12,7 @@ const Login = lazy(() => import("./pages/Auth/Login"));
 const Register = lazy(() => import("./pages/Auth/Register"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Checkout = lazy(() => import("./pages/Checkout"));
-const Cart = lazy(() => import("./pages/User/Cart")); 
+const Cart = lazy(() => import("./pages/User/Cart"));
 
 function App() {
   return (
@@ -26,14 +26,13 @@ function App() {
         }
       >
         <Routes>
-          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetails />} />
+
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* Protected Routes */}
           <Route
             path="/dashboard"
             element={
@@ -44,19 +43,19 @@ function App() {
           />
 
           <Route
-            path="/cart"
+            path="/checkout"
             element={
               <ProtectedRoute>
-                <Cart />
+                <Checkout />
               </ProtectedRoute>
             }
           />
 
           <Route
-            path="/checkout"
+            path="/cart"
             element={
               <ProtectedRoute>
-                <Checkout />
+                <Cart />
               </ProtectedRoute>
             }
           />
