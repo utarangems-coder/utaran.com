@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import AdminProducts from "./Admin/AdminProducts";
-import AdminOrders from "./Admin/AdminOrders";
-import AdminRefunds from "./Admin/AdminRefunds";
+import { useAuth } from "../../context/AuthContext";
+import AdminProducts from "./AdminProducts";
+import AdminOrders from "./AdminOrders";
+import AdminRefunds from "./AdminRefunds";
 
 export default function AdminDashboard() {
   const { logout } = useAuth();

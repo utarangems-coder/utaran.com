@@ -17,7 +17,7 @@ export default function AdminRefunds() {
 
   const loadOrders = async () => {
     const res = await api.get("/admin/orders");
-    setOrders(res.data);
+    setOrders(res.data.data);
   };
 
   const loadLogs = async (orderId) => {

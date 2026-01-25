@@ -1,5 +1,5 @@
 import { useAuth } from "../context/AuthContext";
-import AdminDashboard from "./AdminDashboard";
+import AdminDashboard from "./Admin/AdminDashboard";
 import UserDashboard from "./user/UserDashboard";
 
 export default function Dashboard() {

@@ -15,8 +15,8 @@ export default function AdminProducts() {
   }, []);
 
   const loadProducts = async () => {
-    const data = await fetchAllProducts();
-    setProducts(data);
+    const res = await fetchAllProducts();
+    setProducts(res.data);
   };
 
   const handleDelete = async (id) => {
