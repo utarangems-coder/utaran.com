@@ -13,7 +13,7 @@ export default function UserOrders() {
   const loadOrders = async () => {
     try {
       const data = await getMyOrders();
-      setOrders(data);
+      setOrders(data.data);
     } catch {
       console.error("Failed to load orders");
     } finally {

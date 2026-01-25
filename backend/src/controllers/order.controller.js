@@ -52,43 +52,93 @@ import {asyncHandler} from "../utils/asyncHandler.js";
 // });
 
 export const getMyOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find({ user: req.user.id }).sort("-createdAt");
-  res.json(orders);
-});
-
-export const getAllOrders = asyncHandler(async (req, res) => {
-  const {
-    page = 1,
-    limit = 20,
-    userId,
-    paymentStatus,
-    fulfillmentStatus,
-  } = req.query;
-
-  const query = {};
-
-  if (userId) query.user = userId;
-  if (paymentStatus) query.paymentStatus = paymentStatus;
-  if (fulfillmentStatus) query.fulfillmentStatus = fulfillmentStatus;
+  const page = Number(req.query.page || 1);
+  const limit = 10;
 
   const skip = (page - 1) * limit;
 
   const [orders, total] = await Promise.all([
-    Order.find(query)
-      .populate("user", "email")
-      .sort("-createdAt")
+    Order.find({ user: req.user.id })
+      .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(Number(limit)),
-    Order.countDocuments(query),
+      .limit(limit),
+    Order.countDocuments({ user: req.user.id }),
   ]);
 
   res.json({
     data: orders,
     pagination: {
       total,
+      page,
+      pages: Math.ceil(total / limit),
+    },
+  });
+});
+
+export const getAllOrders = asyncHandler(async (req, res) => {
+  const {
+    search,
+    paymentStatus,
+    fulfillmentStatus,
+    page = 1,
+    limit = 10,
+  } = req.query;
+
+  const match = {};
+
+  if (paymentStatus) match.paymentStatus = paymentStatus;
+  if (fulfillmentStatus) match.fulfillmentStatus = fulfillmentStatus;
+
+  const skip = (page - 1) * limit;
+
+  const pipeline = [
+    { $match: match },
+
+    {
+      $lookup: {
+        from: "users",
+        localField: "user",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    { $unwind: "$user" },
+  ];
+
+  // 🔍 Search by email / name / orderId
+  if (search) {
+    pipeline.push({
+      $match: {
+        $or: [
+          { "user.email": { $regex: search, $options: "i" } },
+          { "user.name": { $regex: search, $options: "i" } },
+          { _id: { $regex: search, $options: "i" } },
+        ],
+      },
+    });
+  }
+
+  pipeline.push(
+    { $sort: { createdAt: -1 } },
+    {
+      $facet: {
+        data: [{ $skip: skip }, { $limit: Number(limit) }],
+        total: [{ $count: "count" }],
+      },
+    }
+  );
+
+  const result = await Order.aggregate(pipeline);
+
+  const orders = result[0].data;
+  const total = result[0].total[0]?.count || 0;
+
+  res.json({
+    data: orders,
+    pagination: {
+      total,
       page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
     },
   });
 });

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createProduct, updateProduct } from "../../api/admin.product.api";
+import { PRODUCT_CATEGORIES } from "../../../../backend/src/utils/categories.js";
 
 export default function ProductForm({ product, onClose, onSaved }) {
   const isEdit = !!product._id;
@@ -93,13 +94,21 @@ export default function ProductForm({ product, onClose, onSaved }) {
           className="w-full mb-3 p-2 bg-[#1c1c1c] border border-[#2a2a2a]"
         />
 
-        <input
+        <select
           name="category"
-          placeholder="Category (e.g. Shoes)"
-          value={form.category || ""}
+          value={form.category}
           onChange={handleChange}
+          required
           className="w-full mb-3 p-2 bg-[#1c1c1c] border border-[#2a2a2a]"
-        />
+        >
+          <option value="">Select Category</option>
+
+          {PRODUCT_CATEGORIES.map((cat) => (
+            <option key={cat} value={cat} className="bg-[#0b0b0b]">
+              {cat}
+            </option>
+          ))}
+        </select>
 
         <input
           placeholder="Tags (comma separated)"

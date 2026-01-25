@@ -5,7 +5,7 @@ export const getOrderById = async (orderId) => {
   return res.data;
 };
 
-export const getMyOrders = async () => {
-  const res = await api.get("/orders/my");
-  return res.data;
+export const getMyOrders = async ({ page = 1 } = {}) => {
+  const res = await api.get(`/orders/my?page=${page}`);
+  return res.data; // { data, pagination }
 };

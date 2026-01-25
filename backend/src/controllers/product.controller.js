@@ -10,32 +10,45 @@ export const createProduct = asyncHandler(async (req, res) => {
 
 export const getAllProducts = asyncHandler(async (req, res) => {
   const {
-    page = 1,
-    limit = 12,
     search,
     category,
     tags,
+    sort = "newest",
+    page = 1,
+    limit = 12,
   } = req.query;
 
   const query = { isActive: true };
 
+  // 🔍 Search by title
+  if (search) {
+    query.title = { $regex: search, $options: "i" };
+  }
+
+  // 🗂 Category
   if (category) {
     query.category = category;
   }
 
+  // 🏷 Tags
   if (tags) {
     query.tags = { $in: tags.split(",") };
   }
 
-  if (search) {
-    query.$text = { $search: search };
-  }
+  // 🔃 Sorting
+  const sortMap = {
+    newest: { createdAt: -1 },
+    price_asc: { price: 1 },
+    price_desc: { price: -1 },
+  };
+
+  const sortBy = sortMap[sort] || sortMap.newest;
 
   const skip = (page - 1) * limit;
 
   const [products, total] = await Promise.all([
     Product.find(query)
-      .sort({ createdAt: -1 })
+      .sort(sortBy)
       .skip(skip)
       .limit(Number(limit)),
     Product.countDocuments(query),
@@ -46,8 +59,7 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     pagination: {
       total,
       page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(total / limit),
+      pages: Math.ceil(total / limit),
     },
   });
 });

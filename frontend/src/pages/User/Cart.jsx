@@ -32,34 +32,54 @@ export default function Cart() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0b0b0b] text-white flex items-center justify-center">
-        Loading cart...
+        Loading cart…
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] text-white px-6 py-16">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl mb-10">Shopping Cart</h1>
+    <main className="min-h-screen bg-[#0b0b0b] text-white px-6 py-24">
+      <div className="max-w-5xl mx-auto space-y-14">
+
+        {/* HEADER */}
+        <header>
+          <h1 className="text-3xl font-light tracking-wide">
+            Shopping Cart
+          </h1>
+          <p className="mt-2 text-sm text-gray-400">
+            Items saved for consideration
+          </p>
+        </header>
 
         {cart.length === 0 ? (
-          <p className="text-gray-400">Your cart is empty.</p>
+          <p className="text-gray-400 text-sm">
+            Your cart is currently empty.
+          </p>
         ) : (
           <>
-            <div className="space-y-6">
+            {/* ITEMS */}
+            <section className="space-y-10">
               {cart.map((item) => (
                 <div
                   key={item.product._id}
-                  className="flex gap-6 border-b border-[#2a2a2a] pb-6"
+                  className="
+                    flex gap-8
+                    border-b border-[#2a2a2a]
+                    pb-10
+                  "
                 >
-                  <img
-                    src={item.product.images[0]}
-                    alt={item.product.title}
-                    className="w-28 h-28 object-cover"
-                  />
+                  {/* IMAGE */}
+                  <div className="w-32 h-40 bg-[#1c1c1c] overflow-hidden">
+                    <img
+                      src={item.product.images[0]}
+                      alt={item.product.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
 
-                  <div className="flex-1">
-                    <h3 className="text-sm">
+                  {/* DETAILS */}
+                  <div className="flex-1 space-y-3">
+                    <h3 className="text-sm tracking-wide">
                       {item.product.title}
                     </h3>
 
@@ -67,51 +87,87 @@ export default function Cart() {
                       ₹{item.product.price}
                     </p>
 
-                    <select
-                      value={item.quantity}
-                      onChange={async (e) => {
-                        await updateCartItem(
-                          item.product._id,
-                          Number(e.target.value)
-                        );
-                        loadCart();
-                      }}
-                      className="mt-3 bg-[#0b0b0b] border border-[#2a2a2a] p-1"
-                    >
-                      {Array.from(
-                        { length: Math.min(item.product.quantity, 10) },
-                        (_, i) => i + 1
-                      ).map((q) => (
-                        <option key={q}>{q}</option>
-                      ))}
-                    </select>
+                    {/* QUANTITY */}
+                    <div className="flex items-center gap-4 pt-2">
+                      <span className="text-xs text-gray-400 uppercase tracking-widest">
+                        Quantity
+                      </span>
+
+                      <select
+                        value={item.quantity}
+                        onChange={async (e) => {
+                          await updateCartItem(
+                            item.product._id,
+                            Number(e.target.value)
+                          );
+                          loadCart();
+                        }}
+                        className="
+                          bg-[#0b0b0b]
+                          border border-[#2a2a2a]
+                          px-3 py-1
+                          text-sm
+                        "
+                      >
+                        {Array.from(
+                          { length: Math.min(item.product.quantity, 10) },
+                          (_, i) => i + 1
+                        ).map((q) => (
+                          <option key={q}>{q}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
+                  {/* REMOVE */}
                   <button
                     onClick={async () => {
                       await removeCartItem(item.product._id);
                       loadCart();
                     }}
-                    className="text-gray-400 hover:text-white transition"
+                    className="
+                      text-xs uppercase tracking-widest
+                      text-gray-500
+                      hover:text-white
+                      transition
+                    "
                   >
                     Remove
                   </button>
                 </div>
               ))}
-            </div>
+            </section>
 
-            <div className="mt-10 flex justify-between items-center">
-              <span>Total</span>
-              <span className="text-xl">₹{total}</span>
-            </div>
+            {/* TOTAL */}
+            <section className="pt-6 flex justify-between items-center">
+              <span className="text-sm uppercase tracking-widest text-gray-400">
+                Total Value
+              </span>
+              <span className="text-xl">
+                ₹{total}
+              </span>
+            </section>
 
-            {/* DISABLED CHECKOUT MESSAGE */}
-            <div className="mt-10 text-sm text-gray-400 border border-[#2a2a2a] p-4">
-              Items must be purchased individually.
-              <br />
-              Please use <span className="text-white">Buy Now</span> on a product
-              page to checkout.
-            </div>
+            {/* INFO BOX */}
+            <section
+              className="
+                mt-10
+                border border-[#2a2a2a]
+                p-6
+                text-sm text-gray-400
+              "
+            >
+              <p className="leading-relaxed">
+                Each item is purchased individually to ensure
+                accurate stock availability and a smoother checkout experience.
+                <br />
+                Please use{" "}
+                <span className="text-white font-medium">
+                  Buy Now
+                </span>{" "}
+                on a product page to proceed with purchase.
+              </p>
+            </section>
           </>
         )}
       </div>

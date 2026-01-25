@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { PRODUCT_CATEGORIES } from "../utils/categories.js";
 
 const productSchema = new mongoose.Schema(
   {
@@ -17,6 +18,7 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+      index: true,
     },
 
     discountPrice: {
@@ -38,6 +40,8 @@ const productSchema = new mongoose.Schema(
 
     category: {
       type: String,
+      enum: PRODUCT_CATEGORIES,
+      required: true,
     },
 
     tags: [
