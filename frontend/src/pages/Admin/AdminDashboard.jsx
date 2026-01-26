@@ -49,8 +49,8 @@ export default function AdminDashboard() {
       </aside>
 
       {/* CONTENT */}
-      <main className="flex-1 p-10">
-        <div className="max-w-6xl mx-auto">
+      <main className="flex-1 p-10 bg-[#0b0b0b] overflow-hidden flex flex-col">
+        <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col">
           {tab === "orders" && <AdminOrders />}
           {tab === "products" && <AdminProducts />}
           {tab === "refunds" && <AdminRefunds />}

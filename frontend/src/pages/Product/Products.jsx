@@ -56,7 +56,7 @@ export default function Products() {
     setProducts((prev) =>
       replace ? res.data : [...prev, ...res.data]
     );
-    setHasMore(res.hasMore);
+    setHasMore(res.pagination.hasMore);
 
     setLoading(false);
     setInitialLoading(false);

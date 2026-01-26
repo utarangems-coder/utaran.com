@@ -70,6 +70,13 @@ export default function ProductDetails() {
   return (
     <main className="min-h-screen bg-[#0b0b0b] text-white px-6 py-20">
       <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-20">
+        {/* <button
+          onClick={() => navigate(-1)}
+          className="mb-10 text-sm text-gray-400 hover:text-white transition tracking-wide"
+        >
+          ← Back to Products
+        </button> */}
+
         {/* IMAGE */}
         <div className="bg-[#1c1c1c] overflow-hidden aspect-[3/4] max-h-[480px] mx-auto group">
           <img

@@ -4,7 +4,28 @@ import { fetchProducts } from "../api/product.api";
 
 export default function Home() {
   const [featured, setFeatured] = useState([]);
-  const categories = ["Clothing", "Footwear", "Accessories"];
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0 });
+  };
+
+  const CATEGORIES = [
+    {
+      label: "Clothing",
+      image:
+        "https://res.cloudinary.com/dwp1yaelk/image/upload/v1769428087/photo-1523381210434-271e8be1f52b_efjya5.jpg",
+    },
+    {
+      label: "Footwear",
+      image:
+        "https://res.cloudinary.com/dwp1yaelk/image/upload/v1769428092/photo-1525966222134-fcfa99b8ae77_jfanrx.jpg",
+    },
+    {
+      label: "Accessories",
+      image:
+        "https://res.cloudinary.com/dwp1yaelk/image/upload/v1769428082/photo-1511556820780-d912e42b4980_lzrecf.jpg",
+    },
+  ];
 
   useEffect(() => {
     loadFeatured();
@@ -21,7 +42,6 @@ export default function Home() {
 
   return (
     <main className="bg-[#0b0b0b] text-white">
-
       {/* HERO */}
       <section className="max-w-7xl mx-auto px-8 py-32 grid md:grid-cols-2 gap-24 items-center">
         <div>
@@ -30,12 +50,13 @@ export default function Home() {
           </h1>
 
           <p className="mt-8 text-gray-400 max-w-md leading-relaxed">
-            Contemporary fashion rooted in confidence, craftsmanship,
-            and understated elegance.
+            Contemporary fashion rooted in confidence, craftsmanship, and
+            understated elegance.
           </p>
 
           <Link
             to="/products"
+            onClick={scrollToTop}
             className="
               inline-block mt-12 px-12 py-4
               border border-white
@@ -50,10 +71,17 @@ export default function Home() {
         {/* HERO IMAGE */}
         <div className="relative h-[520px] bg-[#1c1c1c] overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1520975916090-3105956dac38"
+            src="https://res.cloudinary.com/dwp1yaelk/image/upload/v1769428080/photo-1520975916090-3105956dac38_qnm2rd.jpg"
             alt="UTARAN fashion"
-            className="absolute inset-0 w-full h-full object-cover opacity-90"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+            className="
+            absolute inset-0 w-full h-full object-cover
+            transform-gpu will-change-transform
+          "
           />
+
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent" />
         </div>
       </section>
@@ -64,6 +92,7 @@ export default function Home() {
           <h2 className="text-2xl font-light">Featured Collection</h2>
           <Link
             to="/products"
+            onClick={scrollToTop}
             className="text-sm text-gray-400 hover:text-white transition"
           >
             View all
@@ -77,24 +106,23 @@ export default function Home() {
               to={`/products/${product._id}`}
               className="group"
             >
-              <div className="bg-[#1c1c1c] overflow-hidden">
+              <div className="bg-[#1c1c1c] overflow-hidden h-80">
                 <img
                   src={product.images[0]}
-                  alt={product.title}
+                  loading="lazy"
+                  decoding="async"
                   className="
-                    w-full h-80 object-cover
-                    group-hover:scale-105 transition
+                    w-full h-full object-cover
+                    transform-gpu will-change-transform
+                    group-hover:scale-[1.04]
+                    transition duration-500
                   "
                 />
               </div>
 
               <div className="mt-4">
-                <p className="text-sm tracking-wide">
-                  {product.title}
-                </p>
-                <p className="text-gray-400 text-sm mt-1">
-                  ₹{product.price}
-                </p>
+                <p className="text-sm tracking-wide">{product.title}</p>
+                <p className="text-gray-400 text-sm mt-1">₹{product.price}</p>
               </div>
             </Link>
           ))}
@@ -106,18 +134,39 @@ export default function Home() {
         <h2 className="text-2xl font-light mb-12">Shop by Category</h2>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {categories.map((cat) => (
+          {CATEGORIES.map((cat) => (
             <Link
-              key={cat}
-              to={`/products?category=${cat}`}
-              className="
-                h-64 bg-[#1c1c1c]
-                flex items-center justify-center
-                text-lg uppercase tracking-widest
-                hover:bg-[#2a2a2a] transition
-              "
+              key={cat.label}
+              to={`/products?category=${cat.label}`}
+              onClick={scrollToTop}
+              className="group relative h-64 overflow-hidden bg-[#1c1c1c]"
             >
-              {cat}
+              {/* IMAGE */}
+              <img
+                src={cat.image.replace(
+                  "/upload/",
+                  "/upload/f_auto,q_auto,w_800,h_600,c_fill/",
+                )}
+                alt={cat.label}
+                loading="lazy"
+                decoding="async"
+                className="
+                  absolute inset-0 w-full h-full object-cover
+                  scale-100 group-hover:scale-[1.04]
+                  transition-transform duration-500 ease-out
+                  transform-gpu will-change-transform
+                "
+              />
+
+              {/* DARK OVERLAY */}
+              <div className="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition" />
+
+              {/* TEXT */}
+              <div className="relative z-10 h-full flex items-center justify-center">
+                <span className="text-lg uppercase tracking-widest">
+                  {cat.label}
+                </span>
+              </div>
             </Link>
           ))}
         </div>
@@ -127,25 +176,24 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-6 py-28 grid md:grid-cols-2 gap-16 items-center">
         <div className="h-96 bg-[#1c1c1c] overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb"
+            src="https://res.cloudinary.com/dwp1yaelk/image/upload/v1769428079/photo-1503341455253-b2e723bb3dbb_bo05pb.jpg"
             alt="UTARAN craftsmanship"
             className="w-full h-full object-cover opacity-90"
           />
         </div>
 
         <div>
-          <h2 className="text-2xl font-light mb-6">
-            Designed with Purpose
-          </h2>
+          <h2 className="text-2xl font-light mb-6">Designed with Purpose</h2>
 
           <p className="text-gray-400 leading-relaxed max-w-md">
-            UTARAN represents a return to thoughtful design —
-            timeless silhouettes, refined materials, and details
-            that speak without excess.
+            UTARAN represents a return to thoughtful design — timeless
+            silhouettes, refined materials, and details that speak without
+            excess.
           </p>
 
           <Link
             to="/products"
+            onClick={scrollToTop}
             className="
               inline-block mt-10 px-8 py-3
               border border-white

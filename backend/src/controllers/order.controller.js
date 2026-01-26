@@ -1,7 +1,9 @@
 import Order from "../models/Order.model.js";
 import Product from "../models/Product.model.js";
 import { isValidObjectId } from "../utils/isValidObject.js";
-import {asyncHandler} from "../utils/asyncHandler.js"; 
+import { asyncHandler } from "../utils/asyncHandler.js";
+
+const ALLOWED_STATUSES = ["PENDING", "SHIPPED", "DELIVERED", "CANCELLED"];
 
 // export const createOrder = asyncHandler(async (req, res) => {
 //   const { items } = req.body;
@@ -24,7 +26,7 @@ import {asyncHandler} from "../utils/asyncHandler.js";
 //         isActive: true,
 //         quantity: { $gte: item.quantity },
 //       },
-//       { $inc: { quantity: -item.quantity } }, 
+//       { $inc: { quantity: -item.quantity } },
 //       { new: true }
 //     );
 
@@ -94,6 +96,7 @@ export const getAllOrders = asyncHandler(async (req, res) => {
   const pipeline = [
     { $match: match },
 
+    // 👤 User
     {
       $lookup: {
         from: "users",
@@ -103,6 +106,22 @@ export const getAllOrders = asyncHandler(async (req, res) => {
       },
     },
     { $unwind: "$user" },
+
+    // 💳 Payment (THIS FIXES REFUNDS)
+    {
+      $lookup: {
+        from: "payments",
+        localField: "_id",
+        foreignField: "order",
+        as: "payment",
+      },
+    },
+    {
+      $unwind: {
+        path: "$payment",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
   ];
 
   // 🔍 Search by email / name / orderId
@@ -125,7 +144,7 @@ export const getAllOrders = asyncHandler(async (req, res) => {
         data: [{ $skip: skip }, { $limit: Number(limit) }],
         total: [{ $count: "count" }],
       },
-    }
+    },
   );
 
   const result = await Order.aggregate(pipeline);
@@ -159,18 +178,28 @@ export const getOrderById = asyncHandler(async (req, res) => {
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
 
-  const order = await Order.findByIdAndUpdate(
-    req.params.id,
-    { status },
-    { new: true }
-  );
+  if (!ALLOWED_STATUSES.includes(status)) {
+    return res.status(400).json({ message: "Invalid status" });
+  }
 
-  res.json(order);
+  const order = await Order.findById(req.params.id);
+
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+
+  order.fulfillmentStatus = status;
+  await order.save();
+
+  res.json({
+    message: "Order status updated",
+    order,
+  });
 });
 
 export const getOrdersByUser = asyncHandler(async (req, res) => {
   const orders = await Order.find({ user: req.params.userId }).sort(
-    "-createdAt"
+    "-createdAt",
   );
 
   res.json(orders);

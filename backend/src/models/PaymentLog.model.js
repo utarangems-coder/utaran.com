@@ -5,7 +5,7 @@ const paymentLogSchema = new mongoose.Schema(
     order: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Order",
-      required: true,
+      default: null,
       index: true,
     },
 

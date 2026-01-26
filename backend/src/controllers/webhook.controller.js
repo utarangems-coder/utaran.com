@@ -16,14 +16,14 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
 
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_WEBHOOK_SECRET)
-      .update(req.body)
+      .update(req.rawBody)
       .digest("hex");
 
     if (signature !== expectedSignature) {
       return res.status(400).send("Invalid signature");
     }
 
-    event = JSON.parse(req.body.toString());
+    event = req.body;
   } catch (err) {
     console.error("Webhook signature verification failed", err);
     return res.status(400).send("Bad request");

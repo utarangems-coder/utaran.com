@@ -19,3 +19,10 @@ export const fetchAdminOrders = async ({
   const res = await api.get(`/admin/orders?${params.toString()}`);
   return res.data; // { data, pagination }
 };
+
+export const updateOrderStatus = async (orderId, status) => {
+  const res = await api.patch(`/admin/orders/${orderId}/status`, {
+    status,
+  });
+  return res.data;
+};

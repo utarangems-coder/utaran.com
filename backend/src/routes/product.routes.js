@@ -6,6 +6,8 @@ import {
   deleteProduct,
   restoreProduct,
   getProductById,
+  bulkUpdateProducts,
+  getAdminProducts,
 } from "../controllers/product.controller.js";
 
 import { protect, adminOnly } from "../middlewares/auth.middleware.js";
@@ -22,5 +24,17 @@ router.put("/admin/products/:id", protect, adminOnly, upload.array("images", 5),
 router.delete("/admin/products/:id", protect, adminOnly, deleteProduct);
 router.patch("/admin/products/:id/restore", protect, adminOnly, restoreProduct);
 router.get("/products/:id", getProductById);
+router.post(
+  "/admin/products/bulk",
+  protect,
+  adminOnly,
+  bulkUpdateProducts
+);
+router.get(
+  "/admin/products",
+  protect,
+  adminOnly,
+  getAdminProducts
+);
 
 export default router;

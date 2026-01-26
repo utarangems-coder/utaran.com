@@ -17,7 +17,6 @@ import userRoutes from "./routes/user.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 
 import { errorHandler } from "./middlewares/error.middleware.js";
-import { cleanupExpiredReservations } from "./services/reservationCleanup.Job.js";
 
 const app = express();
 
@@ -42,17 +41,16 @@ app.use(
   }),
 );
 
-app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      if (req.originalUrl === "/api/payments/webhook") {
+        req.rawBody = buf;
+      }
+    },
+  })
+);
 
-cron.schedule("*/1 * * * *", async () => {
-  try {
-    await cleanupExpiredReservations();
-  } catch (err) {
-    console.error("Reservation cleanup failed", err);
-  }
-});
-
-app.use(express.json());
 app.use(cookieParser());
 
 app.get("/health", (req, res) => {
