@@ -5,6 +5,9 @@ import { fetchProducts } from "../api/product.api";
 export default function Home() {
   const [featured, setFeatured] = useState([]);
 
+  useEffect(() => {
+    document.title = "UTARAN — Contemporary Fashion";
+  }, []);
   const scrollToTop = () => {
     window.scrollTo({ top: 0 });
   };

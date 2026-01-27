@@ -3,6 +3,7 @@ import { Suspense, lazy } from "react";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import Navbar from "./components/Navbar";
+import ScrollToTop from "./components/ScrollToTop";
 
 // Lazy-loaded pages
 const Home = lazy(() => import("./pages/Home"));
@@ -17,6 +18,7 @@ const Cart = lazy(() => import("./pages/User/Cart"));
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Navbar />
       <Suspense
         fallback={
