@@ -22,18 +22,19 @@ export default function UserDashboard() {
   const saveAddress = async () => {
     try {
       await api.put("/users/me/address", address);
-      setMessage("Address updated successfully");
+      setMessage("Update successful");
+      setTimeout(() => setMessage(""), 3000);
     } catch {
-      setMessage("Failed to update address");
+      setMessage("Error updating records");
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0b0b] text-white flex">
-      {/* SIDEBAR */}
-      <aside className="w-64 border-r border-[#1f1f1f] p-6 flex flex-col">
-        <h1 className="text-lg tracking-widest uppercase mb-10">
-          My Account
+    <div className="min-h-screen bg-[#050505] text-white flex font-sans">
+      {/* SIDEBAR - Fixed Width */}
+      <aside className="w-64 border-r border-zinc-800 p-8 flex flex-col fixed h-full bg-[#080808]">
+        <h1 className="text-xs tracking-[0.4em] uppercase mb-12 text-white font-medium">
+          Account
         </h1>
 
         <nav className="flex flex-col gap-2 flex-1">
@@ -41,11 +42,11 @@ export default function UserDashboard() {
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`text-left px-4 py-2 text-sm tracking-wide transition
+              className={`text-left px-5 py-3 text-[11px] tracking-[0.2em] uppercase transition-all
                 ${
                   tab === key
-                    ? "bg-white text-black"
-                    : "text-gray-400 hover:text-white hover:bg-[#1c1c1c]"
+                    ? "bg-white text-black font-bold"
+                    : "text-zinc-500 hover:text-white hover:bg-zinc-900"
                 }`}
             >
               {label}
@@ -53,108 +54,119 @@ export default function UserDashboard() {
           ))}
         </nav>
 
-        {/* LOGOUT */}
         <button
           onClick={logout}
-          className="mt-10 text-sm tracking-wide text-red-400 hover:text-red-300 transition"
+          className="text-[10px] tracking-[0.2em] uppercase text-zinc-600 hover:text-red-400 transition-colors pt-8 border-t border-zinc-900"
         >
           Logout
         </button>
       </aside>
 
-      {/* CONTENT */}
-      <main className="flex-1 p-10">
-        <div className="max-w-6xl mx-auto">
-          {/* PROFILE */}
+      {/* CONTENT AREA - Now set to Medium (max-w-3xl) */}
+      <main className="flex-1 ml-64 p-12">
+        <div className="max-w-3xl mx-auto"> {/* Changed from 5xl to 3xl for Medium size */}
+          
+          {/* PROFILE SECTION */}
           {tab === "profile" && (
-            <section className="bg-[#1c1c1c] p-6 rounded max-w-3xl">
-              <h2 className="text-lg mb-4">Profile</h2>
-
-              <div className="space-y-2 text-sm text-gray-400">
-                <p>
-                  <span className="text-white">Name:</span> {user.name}
-                </p>
-                <p>
-                  <span className="text-white">Email:</span> {user.email}
-                </p>
+            <section className="bg-zinc-900/30 border border-zinc-800 p-8 rounded-md shadow-lg">
+              <h2 className="text-lg font-medium mb-8 tracking-tight border-b border-zinc-800 pb-4">Profile</h2>
+              
+              <div className="space-y-6">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] uppercase tracking-widest text-zinc-500">Name</span>
+                  <span className="text-base text-zinc-200">{user.name}</span>
+                </div>
+                
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] uppercase tracking-widest text-zinc-500">Email</span>
+                  <span className="text-base text-zinc-200">{user.email}</span>
+                </div>
               </div>
             </section>
           )}
 
-          {/* ADDRESS */}
+          {/* ADDRESS SECTION */}
           {tab === "address" && (
-            <section className="bg-[#1c1c1c] p-6 rounded max-w-4xl">
-              <h2 className="text-lg mb-6">Delivery Address</h2>
+            <section className="bg-zinc-900/30 border border-zinc-800 p-8 rounded-md shadow-lg">
+              <h2 className="text-lg font-medium mb-8 tracking-tight border-b border-zinc-800 pb-4">Shipping</h2>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <input
-                  name="fullName"
-                  placeholder="Full Name"
-                  value={address.fullName || ""}
-                  onChange={handleChange}
-                  className="p-2 bg-[#0b0b0b] border border-[#2a2a2a] rounded"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Full Name</label>
+                  <input
+                    name="fullName"
+                    value={address.fullName || ""}
+                    onChange={handleChange}
+                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
+                  />
+                </div>
 
-                <input
-                  name="phone"
-                  placeholder="Phone Number"
-                  value={address.phone || ""}
-                  onChange={handleChange}
-                  className="p-2 bg-[#0b0b0b] border border-[#2a2a2a] rounded"
-                />
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Phone</label>
+                  <input
+                    name="phone"
+                    value={address.phone || ""}
+                    onChange={handleChange}
+                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
+                  />
+                </div>
 
-                <input
-                  name="line1"
-                  placeholder="Street Address"
-                  value={address.line1 || ""}
-                  onChange={handleChange}
-                  className="p-2 bg-[#0b0b0b] border border-[#2a2a2a] rounded sm:col-span-2"
-                />
+                <div className="flex flex-col gap-2 md:col-span-2">
+                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Address Line</label>
+                  <input
+                    name="line1"
+                    value={address.line1 || ""}
+                    onChange={handleChange}
+                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
+                  />
+                </div>
 
-                <input
-                  name="city"
-                  placeholder="City"
-                  value={address.city || ""}
-                  onChange={handleChange}
-                  className="p-2 bg-[#0b0b0b] border border-[#2a2a2a] rounded"
-                />
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">City</label>
+                  <input
+                    name="city"
+                    value={address.city || ""}
+                    onChange={handleChange}
+                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
+                  />
+                </div>
 
-                <input
-                  name="state"
-                  placeholder="State"
-                  value={address.state || ""}
-                  onChange={handleChange}
-                  className="p-2 bg-[#0b0b0b] border border-[#2a2a2a] rounded"
-                />
-
-                <input
-                  name="postalCode"
-                  placeholder="Postal Code"
-                  value={address.postalCode || ""}
-                  onChange={handleChange}
-                  className="p-2 bg-[#0b0b0b] border border-[#2a2a2a] rounded"
-                />
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Postal Code</label>
+                  <input
+                    name="postalCode"
+                    value={address.postalCode || ""}
+                    onChange={handleChange}
+                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
+                  />
+                </div>
               </div>
 
-              <button
-                onClick={saveAddress}
-                className="mt-6 px-6 py-2 border border-white hover:bg-white hover:text-black transition"
-              >
-                Save Address
-              </button>
-
-              {message && (
-                <p className="mt-3 text-sm text-gray-400">{message}</p>
-              )}
+              <div className="mt-10 flex items-center gap-6">
+                <button
+                  onClick={saveAddress}
+                  className="bg-white text-black text-[10px] font-bold uppercase tracking-[0.2em] px-8 py-3 hover:bg-zinc-200 transition-all active:scale-95"
+                >
+                  Save
+                </button>
+                {message && (
+                  <p className="text-[10px] text-zinc-400 tracking-widest uppercase">{message}</p>
+                )}
+              </div>
             </section>
           )}
 
-          {/* ORDERS */}
+          {/* ORDERS SECTION - Can stay slightly wider if needed, but 3xl fits well */}
           {tab === "orders" && (
-            <section className="bg-[#1c1c1c] p-6 rounded max-w-5xl">
-              <h2 className="text-lg mb-6">Order History</h2>
+            <div className="max-w-4xl space-y-8">
+              {/* Refund Policy Note */}
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
+                <p className="text-sm text-blue-300 leading-relaxed tracking-wide">
+                  <span className="font-semibold text-base">ℹ️ Important Note:</span> Refunds can only be requested and processed before your order is shipped. If your order hasn't shipped yet and you wish to request a refund, please contact our admin support team immediately.
+                </p>
+              </div>
               <UserOrders />
-            </section>
+            </div>
           )}
         </div>
       </main>
