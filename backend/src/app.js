@@ -21,19 +21,26 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 const app = express();
 
 app.use(helmet());
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+];
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // allow Postman, curl
-      if (origin === process.env.CLIENT_URL) {
+      if (!origin) return callback(null, true); 
+
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      callback(new Error("Not allowed by CORS"));
+
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  }),
+  })
 );
+
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
