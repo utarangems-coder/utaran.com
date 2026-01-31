@@ -88,7 +88,7 @@ export default function UserDashboard() {
           {/* ADDRESS SECTION */}
           {tab === "address" && (
             <section className="bg-zinc-900/30 border border-zinc-800 p-8 rounded-md shadow-lg">
-              <h2 className="text-lg font-medium mb-8 tracking-tight border-b border-zinc-800 pb-4">Shipping</h2>
+              <h2 className="text-lg font-medium mb-8 tracking-tight border-b border-zinc-800 pb-4">Shipping Address</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
                 <div className="flex flex-col gap-2">
@@ -112,10 +112,20 @@ export default function UserDashboard() {
                 </div>
 
                 <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Address Line</label>
+                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Address Line 1</label>
                   <input
                     name="line1"
                     value={address.line1 || ""}
+                    onChange={handleChange}
+                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-2 md:col-span-2">
+                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Address Line 2</label>
+                  <input
+                    name="line2"
+                    value={address.line2 || ""}
                     onChange={handleChange}
                     className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
                   />

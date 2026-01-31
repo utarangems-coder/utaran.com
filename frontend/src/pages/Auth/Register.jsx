@@ -127,7 +127,14 @@ export default function Register() {
               <input
                 className={`${inputClass} sm:col-span-2`}
                 name="address.line1"
-                placeholder="Address line"
+                placeholder="Address line 1"
+                onChange={handleChange}
+              />
+
+              <input
+                className={`${inputClass} sm:col-span-2`}
+                name="address.line2"
+                placeholder="Address line 2"
                 onChange={handleChange}
               />
 
