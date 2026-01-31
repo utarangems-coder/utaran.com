@@ -4,6 +4,10 @@ dotenv.config();
 import app from "./app.js";
 import { connectDB } from "./config/mongoDB.js";
 
+if (process.env.NODE_ENV === "production") {
+  import("./workers/reservationExpiry.worker.js");
+}
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
