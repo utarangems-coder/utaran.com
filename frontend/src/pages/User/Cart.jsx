@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  getCart,
-  updateCartItem,
-  removeCartItem,
-} from "../../api/cart.api";
+import { getCart, updateCartItem, removeCartItem } from "../../api/cart.api";
 
 export default function Cart() {
   const [cart, setCart] = useState([]);
@@ -24,9 +20,23 @@ export default function Cart() {
     }
   };
 
+  const increment = async (item) => {
+    if (item.quantity < item.product.quantity) {
+      await updateCartItem(item.product._id, item.quantity + 1);
+      loadCart();
+    }
+  };
+
+  const decrement = async (item) => {
+    if (item.quantity > 1) {
+      await updateCartItem(item.product._id, item.quantity - 1);
+      loadCart();
+    }
+  };
+
   const total = cart.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
-    0
+    0,
   );
 
   if (loading) {
@@ -40,21 +50,16 @@ export default function Cart() {
   return (
     <main className="min-h-screen bg-[#0b0b0b] text-white px-6 py-24">
       <div className="max-w-5xl mx-auto space-y-14">
-
         {/* HEADER */}
         <header>
-          <h1 className="text-3xl font-light tracking-wide">
-            Shopping Cart
-          </h1>
+          <h1 className="text-3xl font-light tracking-wide">Shopping Cart</h1>
           <p className="mt-2 text-sm text-gray-400">
             Items saved for consideration
           </p>
         </header>
 
         {cart.length === 0 ? (
-          <p className="text-gray-400 text-sm">
-            Your cart is currently empty.
-          </p>
+          <p className="text-gray-400 text-sm">Your cart is currently empty.</p>
         ) : (
           <>
             {/* ITEMS */}
@@ -88,34 +93,30 @@ export default function Cart() {
                     </p>
 
                     {/* QUANTITY */}
-                    <div className="flex items-center gap-4 pt-2">
+                    <div className="flex items-center gap-6 pt-2">
                       <span className="text-xs text-gray-400 uppercase tracking-widest">
                         Quantity
                       </span>
 
-                      <select
-                        value={item.quantity}
-                        onChange={async (e) => {
-                          await updateCartItem(
-                            item.product._id,
-                            Number(e.target.value)
-                          );
-                          loadCart();
-                        }}
-                        className="
-                          bg-[#0b0b0b]
-                          border border-[#2a2a2a]
-                          px-3 py-1
-                          text-sm
-                        "
+                      <button
+                        onClick={() => decrement(item)}
+                        disabled={item.quantity === 1}
+                        className="w-8 h-8 border border-[#2a2a2a] flex items-center justify-center hover:border-white transition disabled:opacity-40"
                       >
-                        {Array.from(
-                          { length: Math.min(item.product.quantity, 10) },
-                          (_, i) => i + 1
-                        ).map((q) => (
-                          <option key={q}>{q}</option>
-                        ))}
-                      </select>
+                        −
+                      </button>
+
+                      <span className="text-sm w-6 text-center">
+                        {item.quantity}
+                      </span>
+
+                      <button
+                        onClick={() => increment(item)}
+                        disabled={item.quantity === item.product.quantity}
+                        className="w-8 h-8 border border-[#2a2a2a] flex items-center justify-center hover:border-white transition disabled:opacity-40"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
 
@@ -143,9 +144,7 @@ export default function Cart() {
               <span className="text-sm uppercase tracking-widest text-gray-400">
                 Total Value
               </span>
-              <span className="text-xl">
-                ₹{total}
-              </span>
+              <span className="text-xl">₹{total}</span>
             </section>
 
             {/* INFO BOX */}
@@ -158,14 +157,12 @@ export default function Cart() {
               "
             >
               <p className="leading-relaxed">
-                Each item is purchased individually to ensure
-                accurate stock availability and a smoother checkout experience.
+                Each item is purchased individually to ensure accurate stock
+                availability and a smoother checkout experience.
                 <br />
                 Please use{" "}
-                <span className="text-white font-medium">
-                  Buy Now
-                </span>{" "}
-                on a product page to proceed with purchase.
+                <span className="text-white font-medium">Buy Now</span> on a
+                product page to proceed with purchase.
               </p>
             </section>
           </>

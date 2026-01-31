@@ -69,24 +69,25 @@ export default function ProductDetails() {
 
   return (
     <main className="min-h-screen bg-[#0b0b0b] text-white px-6 py-20">
-      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-20">
-        {/* <button
-          onClick={() => navigate(-1)}
-          className="mb-10 text-sm text-gray-400 hover:text-white transition tracking-wide"
-        >
-          ← Back to Products
-        </button> */}
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Back to products"
+            className="inline-flex items-center gap-3 text-sm text-gray-400 hover:text-white transition tracking-wide px-3 py-2 rounded-md hover:bg-zinc-900/40"
+          >
+            <span className="text-lg leading-none">←</span>
+            <span className="uppercase tracking-wide text-xs">Back to products</span>
+          </button>
+        </div>
 
+        <div className="grid md:grid-cols-2 gap-20">
         {/* IMAGE */}
-        <div className="bg-[#1c1c1c] overflow-hidden aspect-[3/4] max-h-[480px] mx-auto group">
+        <div className="bg-[#141414] overflow-hidden aspect-[3/4] max-h-[560px] mx-auto group rounded-lg shadow-[0_6px_18px_rgba(0,0,0,0.6)]">
           <img
             src={product.images?.[0]}
             alt={product.title}
-            className="
-            w-full h-full object-cover
-            transition-transform duration-700 ease-out
-            group-hover:scale-[1.04]
-            "
+            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 hover:rotate-[0.01deg]"
             loading="lazy"
           />
         </div>
@@ -95,23 +96,38 @@ export default function ProductDetails() {
         <div className="flex flex-col">
           {/* CATEGORY */}
           {product.category && (
-            <p className="text-xs uppercase tracking-widest text-gray-400 mb-4">
-              {product.category}
-            </p>
+            <p className="text-xs uppercase tracking-widest text-gray-400 mb-4">{product.category}</p>
           )}
 
           {/* TITLE */}
-          <h1 className="text-3xl font-light tracking-wide mb-3">
+          <h1 className="text-3xl md:text-4xl font-medium tracking-tight mb-3 leading-tight text-white">
             {product.title}
           </h1>
 
-          {/* PRICE */}
-          <p className="text-xl mb-8">₹{product.price}</p>
+          {/* PRICE + STOCK */}
+          <div className="mb-6 space-y-3">
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs uppercase tracking-widest text-gray-500">Price</span>
+              <span className="text-xl font-semibold text-white">₹{product.price}</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs uppercase tracking-widest text-gray-500">Stock</span>
+              <span
+                className={`text-xl font-semibold ${
+                  product.quantity === 0
+                    ? "text-red-400"
+                    : product.quantity <= 5
+                    ? "text-yellow-300"
+                    : "text-white"
+                }`}
+              >
+                {product.quantity}
+              </span>
+            </div>
+          </div>
 
           {/* DESCRIPTION */}
-          <p className="text-gray-400 leading-relaxed mb-10">
-            {product.description}
-          </p>
+          <p className="text-gray-400 leading-relaxed mb-10">{product.description}</p>
 
           <div className="border-t border-[#2a2a2a] mb-8" />
 
@@ -123,17 +139,19 @@ export default function ProductDetails() {
               <button
                 onClick={decrement}
                 disabled={quantity === 1}
-                className="w-10 h-10 border border-[#2a2a2a] flex items-center justify-center hover:border-white transition disabled:opacity-40"
+                aria-label="Decrease quantity"
+                className="w-10 h-10 border border-[#2a2a2a] flex items-center justify-center hover:border-white transition transform active:scale-95 disabled:opacity-40 rounded-sm bg-zinc-900"
               >
                 −
               </button>
 
-              <span className="text-lg w-6 text-center">{quantity}</span>
+              <span className="text-lg w-8 text-center font-medium">{quantity}</span>
 
               <button
                 onClick={increment}
                 disabled={quantity === product.quantity}
-                className="w-10 h-10 border border-[#2a2a2a] flex items-center justify-center hover:border-white transition disabled:opacity-40"
+                aria-label="Increase quantity"
+                className="w-10 h-10 border border-[#2a2a2a] flex items-center justify-center hover:border-white transition transform active:scale-95 disabled:opacity-40 rounded-sm bg-zinc-900"
               >
                 +
               </button>
@@ -145,7 +163,7 @@ export default function ProductDetails() {
             <button
               onClick={handleBuyNow}
               disabled={product.quantity === 0}
-              className="w-full py-4 border border-white text-sm tracking-widest uppercase hover:bg-white hover:text-black transition disabled:opacity-40"
+              className="w-full py-4 border border-white text-sm tracking-widest uppercase hover:bg-white hover:text-black transition transform active:scale-95 disabled:opacity-40"
             >
               Buy Now
             </button>
@@ -156,29 +174,29 @@ export default function ProductDetails() {
                 navigate("/cart");
               }}
               disabled={product.quantity === 0}
-              className="w-full py-4 border border-[#2a2a2a] text-sm tracking-widest uppercase hover:border-white transition disabled:opacity-40"
+              className="w-full py-4 border border-[#2a2a2a] text-sm tracking-widest uppercase hover:border-white transition transform active:scale-95 disabled:opacity-40 bg-zinc-900"
             >
               Add to Cart
             </button>
           </div>
 
           {/* STOCK */}
-          {product.quantity === 0 && (
-            <p className="mt-6 text-sm text-gray-400">Currently out of stock</p>
+          {product.quantity === 0 ? (
+            <p className="mt-6 text-sm text-red-400">Currently out of stock</p>
+          ) : (
+            <p className="mt-6 text-sm text-gray-400">{product.quantity} remaining in stock</p>
           )}
 
           {/* TAGS */}
           {product.tags?.length > 0 && (
             <div className="mt-14">
-              <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">
-                Product Details
-              </p>
+              <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">Product Details</p>
 
               <div className="flex flex-wrap gap-3">
                 {product.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="text-xs uppercase tracking-wide border border-[#2a2a2a] px-4 py-2"
+                    className="text-xs uppercase tracking-wide border border-[#2a2a2a] px-4 py-2 rounded-sm hover:border-white transition"
                   >
                     {tag}
                   </span>
@@ -186,6 +204,7 @@ export default function ProductDetails() {
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
     </main>

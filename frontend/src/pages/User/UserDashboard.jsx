@@ -81,6 +81,11 @@ export default function UserDashboard() {
                   <span className="text-[10px] uppercase tracking-widest text-zinc-500">Email</span>
                   <span className="text-base text-zinc-200">{user.email}</span>
                 </div>
+                
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] uppercase tracking-widest text-zinc-500">Phone</span>
+                  <span className="text-base text-zinc-200">{address.phone || user.address?.phone || "—"}</span>
+                </div>
               </div>
             </section>
           )}
