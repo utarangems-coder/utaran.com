@@ -14,199 +14,185 @@ export default function ProductDetails() {
 
   useEffect(() => {
     loadProduct();
-    // eslint-disable-next-line
-  }, []);
+  }, [id]);
 
   const loadProduct = async () => {
     try {
       const data = await fetchProductById(id);
       setProduct(data);
     } catch {
-      setError("Product not found");
+      setError("Archive Record Not Found");
     } finally {
       setLoading(false);
     }
   };
 
-  const increment = () => {
-    if (quantity < product.quantity) {
-      setQuantity((q) => q + 1);
-    }
-  };
-
-  const decrement = () => {
-    if (quantity > 1) {
-      setQuantity((q) => q - 1);
-    }
-  };
+  const increment = () => { if (quantity < product.quantity) setQuantity((q) => q + 1); };
+  const decrement = () => { if (quantity > 1) setQuantity((q) => q - 1); };
 
   const handleBuyNow = () => {
     if (!product || product.quantity === 0) return;
-
-    navigate("/checkout", {
-      state: {
-        productId: product._id,
-        quantity,
-      },
-    });
+    navigate("/checkout", { state: { productId: product._id, quantity } });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0b0b0b] text-white flex items-center justify-center">
-        Loading…
-      </div>
-    );
-  }
-
-  if (error || !product) {
-    return (
-      <div className="min-h-screen bg-[#0b0b0b] text-white flex items-center justify-center">
-        {error || "Product unavailable"}
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="h-screen bg-[#080808] text-white flex items-center justify-center font-serif italic text-lg tracking-[0.2em] animate-pulse">
+      Accessing Database...
+    </div>
+  );
 
   return (
-    <main className="min-h-screen bg-[#0b0b0b] text-white px-6 py-20">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            aria-label="Back to products"
-            className="inline-flex items-center gap-3 text-sm text-gray-400 hover:text-white transition tracking-wide px-3 py-2 rounded-md hover:bg-zinc-900/40"
-          >
-            <span className="text-lg leading-none">←</span>
-            <span className="uppercase tracking-wide text-xs">Back to products</span>
-          </button>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-20">
-        {/* IMAGE */}
-        <div className="bg-[#141414] overflow-hidden aspect-[3/4] max-h-[560px] mx-auto group rounded-lg shadow-[0_6px_18px_rgba(0,0,0,0.6)]">
-          <img
-            src={product.images?.[0]}
-            alt={product.title}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 hover:rotate-[0.01deg]"
-            loading="lazy"
-          />
-        </div>
-
-        {/* DETAILS */}
-        <div className="flex flex-col">
-          {/* CATEGORY */}
-          {product.category && (
-            <p className="text-xs uppercase tracking-widest text-gray-400 mb-4">{product.category}</p>
-          )}
-
-          {/* TITLE */}
-          <h1 className="text-3xl md:text-4xl font-medium tracking-tight mb-3 leading-tight text-white">
-            {product.title}
-          </h1>
-
-          {/* PRICE + STOCK */}
-          <div className="mb-6 space-y-3">
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs uppercase tracking-widest text-gray-500">Price</span>
-              <span className="text-xl font-semibold text-white">₹{product.price}</span>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs uppercase tracking-widest text-gray-500">Stock</span>
-              <span
-                className={`text-xl font-semibold ${
-                  product.quantity === 0
-                    ? "text-red-400"
-                    : product.quantity <= 5
-                    ? "text-yellow-300"
-                    : "text-white"
-                }`}
-              >
-                {product.quantity}
-              </span>
-            </div>
-          </div>
-
-          {/* DESCRIPTION */}
-          <p className="text-gray-400 leading-relaxed mb-10">{product.description}</p>
-
-          <div className="border-t border-[#2a2a2a] mb-8" />
-
-          {/* QUANTITY STEPPER */}
-          <div className="mb-10">
-            <p className="text-sm text-gray-400 mb-3">Quantity</p>
-
-            <div className="flex items-center gap-6">
+    <main className="h-screen bg-[#080808] text-white selection:bg-white selection:text-black antialiased overflow-hidden flex flex-col">
+      <style>{`
+        @keyframes subtleGlow {
+          0% { box-shadow: 0 0 5px rgba(255,255,255,0.1); }
+          50% { box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+          100% { box-shadow: 0 0 5px rgba(255,255,255,0.1); }
+        }
+        .btn-alive:hover {
+          animation: subtleGlow 2s infinite ease-in-out;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      `}</style>
+      
+      <div className="flex-1 max-w-[1600px] mx-auto w-full px-8 md:px-16 py-8 flex flex-col overflow-hidden">
+        
+        <div className="flex-1 grid lg:grid-cols-12 gap-12 xl:gap-24 items-stretch overflow-hidden">
+          
+          {/* LEFT COLUMN */}
+          <div className="lg:col-span-7 flex flex-col overflow-hidden">
+            <div className="mb-6">
               <button
-                onClick={decrement}
-                disabled={quantity === 1}
-                aria-label="Decrease quantity"
-                className="w-10 h-10 border border-[#2a2a2a] flex items-center justify-center hover:border-white transition transform active:scale-95 disabled:opacity-40 rounded-sm bg-zinc-900"
+                onClick={() => navigate(-1)}
+                className="group inline-flex items-center gap-3 text-[10px] tracking-[0.4em] uppercase text-white/60 hover:text-white transition-all duration-300"
               >
-                −
-              </button>
-
-              <span className="text-lg w-8 text-center font-medium">{quantity}</span>
-
-              <button
-                onClick={increment}
-                disabled={quantity === product.quantity}
-                aria-label="Increase quantity"
-                className="w-10 h-10 border border-[#2a2a2a] flex items-center justify-center hover:border-white transition transform active:scale-95 disabled:opacity-40 rounded-sm bg-zinc-900"
-              >
-                +
+                <span className="text-sm transition-transform group-hover:-translate-x-1">←</span>
+                <span>Return to Archive</span>
               </button>
             </div>
+
+            <div className="relative flex-1 overflow-hidden bg-[#0d0d0d] border border-white/5 group">
+              <img
+                src={product?.images?.[0]}
+                alt={product?.title}
+                className="w-full h-full object-contain grayscale-[15%] group-hover:grayscale-0 group-hover:scale-[1.03] transition-all duration-[800ms] ease-out"
+                loading="eager"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+              {product?.quantity === 0 && (
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                  <span className="text-[11px] tracking-[0.8em] uppercase border border-white/40 px-12 py-6 bg-black/50">Sold Out</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* ACTIONS */}
-          <div className="space-y-4">
-            <button
-              onClick={handleBuyNow}
-              disabled={product.quantity === 0}
-              className="w-full py-4 border border-white text-sm tracking-widest uppercase hover:bg-white hover:text-black transition transform active:scale-95 disabled:opacity-40"
-            >
-              Buy Now
-            </button>
-
-            <button
-              onClick={async () => {
-                await addToCart(product._id, quantity);
-                navigate("/cart");
-              }}
-              disabled={product.quantity === 0}
-              className="w-full py-4 border border-[#2a2a2a] text-sm tracking-widest uppercase hover:border-white transition transform active:scale-95 disabled:opacity-40 bg-zinc-900"
-            >
-              Add to Cart
-            </button>
-          </div>
-
-          {/* STOCK */}
-          {product.quantity === 0 ? (
-            <p className="mt-6 text-sm text-red-400">Currently out of stock</p>
-          ) : (
-            <p className="mt-6 text-sm text-gray-400">{product.quantity} remaining in stock</p>
-          )}
-
-          {/* TAGS */}
-          {product.tags?.length > 0 && (
-            <div className="mt-14">
-              <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">Product Details</p>
-
-              <div className="flex flex-wrap gap-3">
-                {product.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs uppercase tracking-wide border border-[#2a2a2a] px-4 py-2 rounded-sm hover:border-white transition"
-                  >
-                    {tag}
+          {/* RIGHT COLUMN */}
+          <div className="lg:col-span-5 flex flex-col space-y-8 h-full justify-center overflow-y-auto no-scrollbar pr-4">
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] tracking-[0.6em] uppercase text-white/70">{product?.category} studio</span>
+                <span className="h-[1px] w-12 bg-white/40"></span>
+              </div>
+              <h1 className="text-5xl md:text-7xl font-serif italic leading-[1] tracking-tighter text-white">
+                {product?.title}
+              </h1>
+              <div className="flex items-center gap-10 pt-2">
+                <span className="text-3xl font-light tracking-tight italic">₹{product?.price.toLocaleString()}</span>
+                <div className="flex flex-col border-l border-white/20 pl-6">
+                  <span className={`text-[10px] tracking-widest uppercase font-bold ${product?.quantity === 0 ? 'text-red-400' : 'text-white'}`}>
+                    {product?.quantity === 0 ? "Currently Unavailable" : "Archive Certified"}
                   </span>
-                ))}
+                  <span className="text-[9px] tracking-[0.2em] uppercase text-white/50 italic">ID: UTR-{product?._id.slice(-6).toUpperCase()}</span>
+                </div>
               </div>
             </div>
-          )}
-        </div>
+
+            <div className="max-w-md">
+              <p className="text-white/80 text-[13px] md:text-sm leading-relaxed font-light tracking-wide italic">
+                {product?.description || "A masterfully crafted piece emphasizing the Utaran philosophy of timeless silhouette and refined materiality."}
+              </p>
+            </div>
+
+            <div className="w-full h-px bg-gradient-to-r from-white/30 to-transparent" />
+
+            <div className="space-y-10 max-w-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] tracking-[0.5em] uppercase text-white/80 font-medium italic">Quantity Selector</span>
+                <div className="flex items-center border border-white/30 bg-[#111] overflow-hidden">
+                  <button
+                    onClick={decrement}
+                    disabled={quantity === 1}
+                    className="w-12 h-12 flex items-center justify-center hover:bg-white hover:text-black transition-all duration-300 disabled:opacity-20 text-white"
+                  >
+                    —
+                  </button>
+                  <span className="w-12 text-center text-xs font-bold text-white">{quantity}</span>
+                  <button
+                    onClick={increment}
+                    disabled={quantity >= product?.quantity}
+                    className="w-12 h-12 flex items-center justify-center hover:bg-white hover:text-black transition-all duration-300 disabled:opacity-20 text-white"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                <button
+                  onClick={handleBuyNow}
+                  disabled={product?.quantity === 0}
+                  className="btn-alive group relative w-full py-5 bg-white text-black text-[10px] tracking-[0.6em] uppercase font-black overflow-hidden transition-all duration-300 active:scale-[0.97] hover:tracking-[0.8em] disabled:opacity-20"
+                >
+                  <span className="relative z-10">Purchase Piece</span>
+                </button>
+
+                <button
+                  onClick={async () => {
+                    await addToCart(product._id, quantity);
+                    navigate("/cart");
+                  }}
+                  disabled={product?.quantity === 0}
+                  className="group relative w-full py-5 border border-white/50 text-[10px] tracking-[0.6em] uppercase hover:bg-white hover:text-black transition-all duration-500 active:scale-[0.97] disabled:opacity-20 text-white"
+                >
+                  Add to Bag
+                </button>
+              </div>
+
+              <div className="pt-4 space-y-6">
+                <h4 className="text-[9px] tracking-[0.6em] uppercase text-white/50">Composition Markers</h4>
+                <div className="flex flex-wrap gap-2">
+                    {product?.tags?.map((tag) => (
+                      <span key={tag} className="text-[9px] tracking-[0.3em] uppercase border border-white/20 px-4 py-2 text-white/70 hover:text-white hover:border-white/60 transition-all cursor-default">
+                        {tag}
+                      </span>
+                    ))}
+                </div>
+                <div className="grid grid-cols-2 gap-8 text-[9px] tracking-[0.3em] uppercase pt-4 border-t border-white/20">
+                  <div className="space-y-1">
+                    <p className="text-white/40 italic">Availability</p>
+                    <p className="text-white/90">{product?.quantity > 0 ? `${product.quantity} Remaining` : 'Sold Out'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-white/40 italic">Sourcing</p>
+                    <p className="text-white/90">Ethical / Global</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
+
+      <footer className="px-16 py-6 border-t border-white/10 flex justify-between items-center text-[9px] tracking-[0.6em] uppercase text-white/40">
+         <span>Utaran Studio MMXXVI</span>
+         <div className="flex gap-10">
+            <span className="hidden md:block">Sustainable / Timeless / Refined</span>
+            <span className="text-white/60">Archive Index</span>
+         </div>
+      </footer>
     </main>
   );
 }

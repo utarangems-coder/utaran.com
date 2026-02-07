@@ -4,9 +4,9 @@ import api from "../../api/axios";
 import UserOrders from "./UserOrders";
 
 const TABS = [
-  { key: "profile", label: "Profile" },
-  { key: "address", label: "Address" },
-  { key: "orders", label: "Orders" },
+  { key: "profile", label: "Profile Identity" },
+  { key: "address", label: "Shipping Ledger" },
+  { key: "orders", label: "Order Archive" },
 ];
 
 export default function UserDashboard() {
@@ -22,32 +22,32 @@ export default function UserDashboard() {
   const saveAddress = async () => {
     try {
       await api.put("/users/me/address", address);
-      setMessage("Update successful");
+      setMessage("Records Synchronized");
       setTimeout(() => setMessage(""), 3000);
     } catch {
-      setMessage("Error updating records");
+      setMessage("Error Updating Ledger");
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex font-sans">
-      {/* SIDEBAR - Fixed Width */}
-      <aside className="w-64 border-r border-zinc-800 p-8 flex flex-col fixed h-full bg-[#080808]">
-        <h1 className="text-xs tracking-[0.4em] uppercase mb-12 text-white font-medium">
-          Account
-        </h1>
+    <div className="min-h-screen bg-[#050505] text-white flex flex-col md:flex-row font-sans selection:bg-white selection:text-black">
+      {/* SIDEBAR */}
+      <aside className="w-full md:w-72 md:min-h-screen border-b md:border-b-0 md:border-r border-white/10 p-8 md:p-10 flex flex-col bg-[#080808] relative z-20">
+        <div className="mb-10 md:mb-20">
+          <h1 className="text-[9px] tracking-[0.6em] uppercase text-white/50 mb-2 font-bold">Workspace</h1>
+          <p className="font-serif italic text-3xl tracking-tighter text-white">Console</p>
+        </div>
 
-        <nav className="flex flex-col gap-2 flex-1">
+        <nav className="flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-visible no-scrollbar">
           {TABS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`text-left px-5 py-3 text-[11px] tracking-[0.2em] uppercase transition-all
-                ${
-                  tab === key
-                    ? "bg-white text-black font-bold"
-                    : "text-zinc-500 hover:text-white hover:bg-zinc-900"
-                }`}
+              className={`text-left px-4 py-3 md:px-6 md:py-5 text-[10px] tracking-[0.2em] md:tracking-[0.4em] uppercase transition-all duration-500 whitespace-nowrap border-b-2 md:border-b-0 md:border-l-2 ${
+                tab === key 
+                  ? "border-white text-white bg-white/[0.03]" 
+                  : "border-transparent text-white/40 hover:text-white hover:bg-white/[0.02]"
+              }`}
             >
               {label}
             </button>
@@ -56,130 +56,101 @@ export default function UserDashboard() {
 
         <button
           onClick={logout}
-          className="text-[10px] tracking-[0.2em] uppercase text-zinc-600 hover:text-red-400 transition-colors pt-8 border-t border-zinc-900"
+          className="hidden md:flex text-[9px] tracking-[0.5em] uppercase text-white/30 hover:text-red-500 transition-all duration-500 pt-8 border-t border-white/10 items-center justify-between group mt-auto"
         >
-          Logout
+          <span>Terminate Session</span>
+          <span className="group-hover:translate-x-1 transition-transform">→</span>
         </button>
       </aside>
 
-      {/* CONTENT AREA - Now set to Medium (max-w-3xl) */}
-      <main className="flex-1 ml-64 p-12">
-        <div className="max-w-3xl mx-auto"> {/* Changed from 5xl to 3xl for Medium size */}
+      {/* CONTENT AREA */}
+      <main className="flex-1 p-6 md:p-16 bg-[#050505] overflow-x-hidden">
+        <div className="max-w-5xl mx-auto">
           
           {/* PROFILE SECTION */}
           {tab === "profile" && (
-            <section className="bg-zinc-900/30 border border-zinc-800 p-8 rounded-md shadow-lg">
-              <h2 className="text-lg font-medium mb-8 tracking-tight border-b border-zinc-800 pb-4">Profile</h2>
+            <section className="space-y-16 animate-fade-in">
+              <header className="border-b border-white/20 pb-8">
+                <h2 className="text-3xl md:text-4xl font-serif italic tracking-tight text-white">Identity Details</h2>
+              </header>
               
-              <div className="space-y-6">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] uppercase tracking-widest text-zinc-500">Name</span>
-                  <span className="text-base text-zinc-200">{user.name}</span>
-                </div>
-                
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] uppercase tracking-widest text-zinc-500">Email</span>
-                  <span className="text-base text-zinc-200">{user.email}</span>
-                </div>
-                
-                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] uppercase tracking-widest text-zinc-500">Phone</span>
-                  <span className="text-base text-zinc-200">{address.phone || user.address?.phone || "—"}</span>
-                </div>
+              <div className="grid gap-12">
+                {[
+                  { label: "Client Name", value: user.name },
+                  { label: "Authorized Email", value: user.email },
+                  { label: "Registered Phone", value: address.phone || user.address?.phone || "Registry Empty" }
+                ].map((item) => (
+                  <div key={item.label} className="group border-b border-white/10 pb-6 hover:border-white/40 transition-colors duration-500">
+                    <span className="text-[9px] uppercase tracking-[0.6em] text-white/50 block mb-3 font-bold">{item.label}</span>
+                    <span className="text-xl text-white/90 font-light tracking-wide">{item.value}</span>
+                  </div>
+                ))}
               </div>
             </section>
           )}
 
           {/* ADDRESS SECTION */}
           {tab === "address" && (
-            <section className="bg-zinc-900/30 border border-zinc-800 p-8 rounded-md shadow-lg">
-              <h2 className="text-lg font-medium mb-8 tracking-tight border-b border-zinc-800 pb-4">Shipping Address</h2>
+            <section className="space-y-16 animate-fade-in">
+               <header className="border-b border-white/20 pb-8">
+                <h2 className="text-3xl md:text-4xl font-serif italic tracking-tight text-white">Shipping Ledger</h2>
+              </header>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Full Name</label>
-                  <input
-                    name="fullName"
-                    value={address.fullName || ""}
-                    onChange={handleChange}
-                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Phone</label>
-                  <input
-                    name="phone"
-                    value={address.phone || ""}
-                    onChange={handleChange}
-                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Address Line 1</label>
-                  <input
-                    name="line1"
-                    value={address.line1 || ""}
-                    onChange={handleChange}
-                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Address Line 2</label>
-                  <input
-                    name="line2"
-                    value={address.line2 || ""}
-                    onChange={handleChange}
-                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">City</label>
-                  <input
-                    name="city"
-                    value={address.city || ""}
-                    onChange={handleChange}
-                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] uppercase tracking-widest text-zinc-500">Postal Code</label>
-                  <input
-                    name="postalCode"
-                    value={address.postalCode || ""}
-                    onChange={handleChange}
-                    className="bg-zinc-950 border border-zinc-800 p-3 rounded-sm text-sm text-white focus:border-zinc-500 outline-none transition-all"
-                  />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                {[
+                  { label: "Full Name", name: "fullName" },
+                  { label: "Contact Phone", name: "phone" },
+                  { label: "Address Line 1", name: "line1", span: true },
+                  { label: "Address Line 2", name: "line2", span: true },
+                  { label: "City / District", name: "city" },
+                  { label: "Postal Code", name: "postalCode" }
+                ].map((field) => (
+                  <div key={field.name} className={`flex flex-col gap-4 ${field.span ? 'md:col-span-2' : ''}`}>
+                    <label className="text-[9px] uppercase tracking-[0.5em] text-white/50 font-bold">{field.label}</label>
+                    <input
+                      name={field.name}
+                      value={address[field.name] || ""}
+                      onChange={handleChange}
+                      className="bg-transparent border-b border-white/10 py-3 text-base text-white focus:border-white outline-none transition-all duration-500 placeholder:text-white/10 hover:border-white/30 font-light tracking-wide w-full"
+                    />
+                  </div>
+                ))}
               </div>
 
-              <div className="mt-10 flex items-center gap-6">
+              <div className="mt-20 flex items-center gap-12">
                 <button
                   onClick={saveAddress}
-                  className="bg-white text-black text-[10px] font-bold uppercase tracking-[0.2em] px-8 py-3 hover:bg-zinc-200 transition-all active:scale-95"
+                  className="bg-white text-black text-[10px] font-black uppercase tracking-[0.4em] px-16 py-5 hover:bg-gray-200 transition-all active:scale-[0.98] shadow-[0_10px_30px_rgba(255,255,255,0.15)]"
                 >
-                  Save
+                  Save Entry
                 </button>
                 {message && (
-                  <p className="text-[10px] text-zinc-400 tracking-widest uppercase">{message}</p>
+                  <p className="text-[9px] text-white font-bold tracking-[0.3em] uppercase italic animate-pulse border-b border-white/60 pb-1">{message}</p>
                 )}
               </div>
             </section>
           )}
 
-          {/* ORDERS SECTION - Can stay slightly wider if needed, but 3xl fits well */}
+          {/* ORDERS SECTION */}
           {tab === "orders" && (
-            <div className="max-w-4xl space-y-8">
-              {/* Refund Policy Note */}
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-6">
-                <p className="text-sm text-blue-300 leading-relaxed tracking-wide">
-                  <span className="font-semibold text-base">ℹ️ Important Note:</span> Refunds can only be requested and processed before your order is shipped. If your order hasn't shipped yet and you wish to request a refund, please contact our admin support team immediately.
-                </p>
+            <div className="space-y-16 animate-fade-in">
+              {/* REFUND ALERT */}
+              <div className="bg-[#0a0a0a] border-l-4 border-white p-8 md:p-10 relative overflow-hidden group shadow-2xl">
+                <div className="flex flex-col md:flex-row items-start md:items-baseline gap-6 relative z-10">
+                  <span className="flex-shrink-0 text-[9px] tracking-[0.5em] uppercase text-white font-black px-3 py-1 border border-white/30">
+                    Protocol 07
+                  </span>
+                  <div className="space-y-3">
+                    <h3 className="text-xl md:text-2xl font-serif italic text-white">Refund Policy Notice</h3>
+                    <p className="text-xs md:text-[13px] text-white/70 leading-relaxed tracking-wide font-light max-w-2xl">
+                      Refunds are processed for manifests <span className="text-white font-bold border-b border-white/40">prior to dispatch only</span>. Once the archive item enters transit, the manifest is locked. 
+                      <br className="hidden md:block" />
+                      For urgent signals, contact <span className="text-white font-bold cursor-pointer hover:text-white/80 transition-colors">Utaran Support</span> immediately.
+                    </p>
+                  </div>
+                </div>
               </div>
+
               <UserOrders />
             </div>
           )}
