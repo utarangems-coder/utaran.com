@@ -6,7 +6,6 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
-import cron from "node-cron";
 
 import authRoutes from "./routes/auth.routes.js";
 import productRoutes from "./routes/product.routes.js";
@@ -60,6 +59,9 @@ app.use(
 
 app.use(cookieParser());
 
+app.get("/", (req, res) => {
+  res.status(200).send("OK");
+});
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
