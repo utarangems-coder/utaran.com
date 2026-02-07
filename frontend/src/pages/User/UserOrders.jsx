@@ -10,26 +10,27 @@ const formatCurrency = (value) => {
   });
 };
 
+// Premium Glass-morphism Badges
 const statusBadgeColor = (status) => {
   const s = String(status || "").toLowerCase();
-  if (s.includes("deliver")) return "text-green-400 border-green-400/40 bg-green-400/5";
-  if (s.includes("ship") || s.includes("dispatch")) return "text-amber-300 border-amber-300/40 bg-amber-300/5";
-  if (s.includes("confirm") || s.includes("process")) return "text-white border-white/40 bg-white/5";
-  return "text-white/40 border-white/10 bg-white/5";
+  if (s.includes("deliver")) return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10 shadow-[0_0_15px_rgba(52,211,153,0.1)]";
+  if (s.includes("ship") || s.includes("dispatch")) return "text-amber-300 border-amber-500/30 bg-amber-500/10 shadow-[0_0_15px_rgba(251,191,36,0.1)]";
+  if (s.includes("confirm") || s.includes("process")) return "text-blue-300 border-blue-500/30 bg-blue-500/10 shadow-[0_0_15px_rgba(96,165,250,0.1)]";
+  return "text-white/60 border-white/20 bg-white/5";
 };
 
 const paymentBadgeColor = (status) => {
   const s = String(status || "").toLowerCase();
-  if (s.includes("paid")) return "text-green-400 border-green-400/40 bg-green-400/5";
-  if (s.includes("pending")) return "text-yellow-400 border-yellow-400/30 bg-yellow-400/5";
-  return "text-white/40 border-white/10";
+  if (s.includes("paid")) return "text-emerald-400 border-emerald-500/30 bg-emerald-500/10";
+  if (s.includes("pending")) return "text-orange-300 border-orange-500/30 bg-orange-500/10";
+  return "text-white/60 border-white/20";
 };
 
 const OrderTimeline = ({ status }) => {
   const steps = [
     { key: "pending", label: "Manifested" },
     { key: "confirmed", label: "Curating" },
-    { key: "shipped", label: "Transit" },
+    { key: "shipped", label: "In Transit" },
     { key: "delivered", label: "Arrived" },
   ];
 
@@ -46,29 +47,49 @@ const OrderTimeline = ({ status }) => {
   const currentIndex = steps.findIndex((s) => s.key === currentKey);
 
   return (
-    <div className="w-full py-8 md:py-12">
-      <div className="relative flex justify-between items-center px-2">
-        <div className="absolute top-1/2 left-0 w-full h-[1px] bg-white/10 -translate-y-1/2" />
+    <div className="w-full py-8">
+      {/* Grid Layout for Timeline to prevent overlap */}
+      <div className="relative">
+        {/* Line */}
+        <div className="absolute top-[5px] left-0 w-full h-[1px] bg-white/10" />
+        <div 
+          className="absolute top-[5px] left-0 h-[1px] bg-white transition-all duration-1000 ease-out"
+          style={{ width: `${(currentIndex / (steps.length - 1)) * 100}%` }}
+        />
         
-        {steps.map((step, idx) => {
-          const isCompleted = idx <= currentIndex;
-          const isCurrent = idx === currentIndex;
+        {/* Nodes - Flex for positioning dots exactly on the line */}
+        <div className="flex justify-between relative z-10 mb-6">
+          {steps.map((step, idx) => {
+            const isCompleted = idx <= currentIndex;
+            const isCurrent = idx === currentIndex;
+            return (
+              <div key={step.key} className="flex flex-col items-center w-4">
+                <div
+                  className={`w-2.5 h-2.5 rounded-full transition-all duration-[0.8s] ${
+                    isCompleted ? "bg-white shadow-[0_0_10px_white]" : "bg-[#0a0a0a] border border-white/20"
+                  } ${isCurrent ? "scale-150 ring-[3px] ring-white/10" : ""}`}
+                />
+              </div>
+            );
+          })}
+        </div>
 
-          return (
-            <div key={step.key} className="relative z-10 flex flex-col items-center group">
-              <div
-                className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-full transition-all duration-[1s] ease-out ${
-                  isCompleted ? "bg-white ring-[4px] ring-white/5" : "bg-[#1a1a1a] border border-white/10"
-                } ${isCurrent ? "scale-125 shadow-[0_0_20px_rgba(255,255,255,0.9)] ring-white/20" : ""}`}
-              />
-              <span className={`absolute -bottom-8 md:-bottom-10 whitespace-nowrap text-[8px] md:text-[9px] uppercase tracking-[0.3em] md:tracking-[0.5em] font-black transition-all duration-700 ${
-                isCurrent ? "text-white opacity-100 translate-y-0" : "text-white/30 hidden sm:block"
-              }`}>
-                {step.label}
-              </span>
-            </div>
-          );
-        })}
+        {/* Labels - Grid for perfect spacing without overlap */}
+        <div className="grid grid-cols-4 text-center">
+          {steps.map((step, idx) => {
+            const isCurrent = idx === currentIndex;
+            // Alignment logic: First left, Last right, Middle centered
+            const alignClass = idx === 0 ? 'text-left -ml-2' : idx === steps.length - 1 ? 'text-right -mr-2' : 'text-center';
+            
+            return (
+              <div key={step.key} className={`transition-all duration-500 ${alignClass} ${isCurrent ? 'opacity-100' : 'opacity-40'}`}>
+                <span className={`text-[8px] md:text-[9px] uppercase tracking-[0.2em] font-bold block ${isCurrent ? 'text-white' : 'text-white/60'}`}>
+                  {step.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -93,7 +114,7 @@ export default function UserOrders() {
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="w-8 h-8 border-t-2 border-white rounded-full animate-spin" />
+      <div className="w-8 h-8 border-t-2 border-white rounded-full animate-spin shadow-[0_0_20px_white]" />
     </div>
   );
 
@@ -104,71 +125,99 @@ export default function UserOrders() {
   );
 
   return (
-    <div className="space-y-16 md:space-y-24 pb-32">
-      <header className="mb-12 border-b border-white/10 pb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+    <div className="space-y-24 pb-32">
+      <header className="mb-16 border-b border-white/10 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h3 className="text-[10px] tracking-[0.6em] uppercase text-white/50 mb-2 font-bold">Record History</h3>
-          <h1 className="text-4xl md:text-5xl font-serif italic tracking-tighter text-white">Order Archive</h1>
+          <h3 className="text-[10px] tracking-[0.6em] uppercase text-white/50 mb-3 font-bold">Record History</h3>
+          <h1 className="text-5xl font-serif italic tracking-tighter text-white">Order Archive</h1>
         </div>
-        <span className="text-[10px] tracking-[0.4em] uppercase text-white/30 font-medium">Entries: {orders.length}</span>
+        <div className="flex items-center gap-4">
+           <div className="h-px w-10 bg-white/20"></div>
+           <span className="text-[10px] tracking-[0.4em] uppercase text-white/40 font-medium">{orders.length} Records Found</span>
+        </div>
       </header>
 
       {orders.map((order) => (
         <div 
           key={order._id} 
-          className="group bg-[#0a0a0a] border border-white/10 hover:border-white/30 transition-all duration-[0.6s] ease-out hover:shadow-[0_20px_60px_rgba(0,0,0,0.6)] relative overflow-hidden flex flex-col"
+          className="group bg-[#0a0a0a] border border-white/10 hover:border-white/30 transition-all duration-[0.5s] ease-out hover:shadow-[0_20px_80px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col"
         >
+          {/* Decorative Glow on Hover */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
           {/* Header Bar */}
-          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center px-8 md:px-12 py-6 md:py-8 border-b border-white/10 bg-white/[0.02] gap-6 md:gap-8">
-            <div className="flex flex-wrap gap-8 md:gap-16">
+          <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center px-10 py-8 border-b border-white/10 bg-white/[0.02] gap-8 relative z-10">
+            <div className="flex flex-wrap gap-12">
               <div>
-                <p className="text-[9px] text-white/50 uppercase tracking-[0.6em] mb-1 font-bold">Entry Ref</p>
-                <p className="text-[11px] font-black text-white tracking-[0.2em] uppercase">ARK-{order._id.slice(-8)}</p>
+                <p className="text-[9px] text-white/40 uppercase tracking-[0.6em] mb-1 font-bold">Ref ID</p>
+                <p className="text-sm font-black text-white tracking-[0.1em] uppercase">ARK-{order._id.slice(-6)}</p>
               </div>
               <div>
-                <p className="text-[9px] text-white/50 uppercase tracking-[0.6em] mb-1 font-bold">Authenticated</p>
-                <p className="text-[11px] font-black text-white tracking-[0.2em] uppercase">
+                <p className="text-[9px] text-white/40 uppercase tracking-[0.6em] mb-1 font-bold">Date</p>
+                <p className="text-sm font-bold text-white tracking-[0.1em] uppercase">
                   {new Date(order.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </p>
               </div>
             </div>
-            <div className="flex gap-3 md:gap-4 flex-wrap">
-              <span className={`px-4 py-1.5 md:px-6 md:py-2 text-[9px] font-black uppercase tracking-[0.2em] border rounded-full transition-all duration-500 ${statusBadgeColor(order.fulfillmentStatus)}`}>
-                {order.fulfillmentStatus}
-              </span>
-              <span className={`px-4 py-1.5 md:px-6 md:py-2 text-[9px] font-black uppercase tracking-[0.2em] border rounded-full transition-all duration-500 ${paymentBadgeColor(order.paymentStatus)}`}>
-                {order.paymentStatus}
-              </span>
+            
+            <div className="flex gap-4 items-center flex-wrap">
+              <div className="flex flex-col items-end">
+                 <p className="text-[8px] text-white/30 uppercase tracking-[0.3em] mb-1">Status</p>
+                 <span className={`px-5 py-2 text-[9px] font-black uppercase tracking-[0.2em] border rounded-full ${statusBadgeColor(order.fulfillmentStatus)}`}>
+                    {order.fulfillmentStatus}
+                 </span>
+              </div>
+              <div className="flex flex-col items-end">
+                 <p className="text-[8px] text-white/30 uppercase tracking-[0.3em] mb-1">Payment</p>
+                 <span className={`px-5 py-2 text-[9px] font-black uppercase tracking-[0.2em] border rounded-full ${paymentBadgeColor(order.paymentStatus)}`}>
+                    {order.paymentStatus}
+                 </span>
+              </div>
             </div>
           </div>
 
           {/* Content Body */}
-          <div className="p-8 md:p-12 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start lg:items-center">
+          <div className="p-10 grid grid-cols-1 lg:grid-cols-12 gap-16 items-start relative z-10">
             
-            {/* Items List - Scrollable if too long */}
-            <div className="lg:col-span-5 space-y-6 lg:pr-12 lg:border-r border-white/10 max-h-[300px] overflow-y-auto no-scrollbar">
-              {order.items.map((item) => (
-                <div key={item.product} className="group/item">
-                  <div className="flex justify-between items-baseline mb-2">
-                    <h4 className="text-sm md:text-base font-bold text-white/90 uppercase tracking-tight group-hover/item:text-white transition-colors truncate pr-4">{item.title}</h4>
-                    <span className="text-[10px] text-white/50 uppercase tracking-[0.2em] font-medium whitespace-nowrap">Qty {item.quantity}</span>
+            {/* ITEMS LIST */}
+            <div className="lg:col-span-5 space-y-8 lg:pr-10 lg:border-r border-white/10">
+              <p className="text-[9px] text-white/30 uppercase tracking-[0.4em] mb-4 font-bold">Manifest Items</p>
+              {order.items.map((item, idx) => (
+                <div key={idx} className="group/item flex flex-col gap-2">
+                  <div className="flex justify-between items-start">
+                    <h4 className="text-lg font-bold text-white uppercase tracking-tight leading-none group-hover/item:text-white/70 transition-colors cursor-default">
+                      {item.title}
+                    </h4>
                   </div>
-                  <div className="h-px w-full bg-white/5 group-hover/item:bg-white/20 transition-colors duration-500" />
+                  
+                  <div className="flex items-center gap-4 text-[10px] text-white/50 uppercase tracking-[0.2em] font-medium">
+                    <span className="text-white">Qty: {item.quantity}</span>
+                    <span className="w-1 h-1 bg-white/20 rounded-full" />
+                    <span>Archive Collection</span>
+                  </div>
+                  
+                  <div className="h-px w-full bg-white/5 mt-4 group-hover/item:bg-white/20 transition-colors duration-500" />
                 </div>
               ))}
             </div>
 
-            {/* Timeline - Centered */}
-            <div className="lg:col-span-4 px-2 md:px-4 w-full">
-              <OrderTimeline status={order.fulfillmentStatus} />
+            {/* STATUS & TIMELINE */}
+            <div className="lg:col-span-4 w-full flex flex-col gap-8 pt-2">
+               <div className="flex justify-between items-end">
+                  <p className="text-[9px] text-white/30 uppercase tracking-[0.4em] font-bold">Tracking Status</p>
+               </div>
+               <OrderTimeline status={order.fulfillmentStatus} />
             </div>
 
-            {/* Total - Right Aligned */}
-            <div className="lg:col-span-3 flex flex-row lg:flex-col justify-between lg:justify-center items-center lg:items-end w-full border-t lg:border-t-0 border-white/10 pt-6 lg:pt-0">
-              <p className="text-[9px] text-white/50 uppercase tracking-[0.6em] mb-0 lg:mb-3 font-black">Manifest Total</p>
-              <p className="text-3xl md:text-4xl font-serif italic text-white tracking-tighter drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]">
-                {formatCurrency(order.totalAmount)}
-              </p>
+            {/* TOTAL */}
+            <div className="lg:col-span-3 flex flex-col justify-between h-full items-end text-right pt-2">
+              <div>
+                <p className="text-[9px] text-white/40 uppercase tracking-[0.6em] mb-3 font-black">Total Value</p>
+                <p className="text-4xl font-serif italic text-white tracking-tighter drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]">
+                  {formatCurrency(order.totalAmount)}
+                </p>
+                <p className="text-[9px] text-white/30 uppercase tracking-widest mt-2">Paid via Razorpay</p>
+              </div>
             </div>
           </div>
         </div>

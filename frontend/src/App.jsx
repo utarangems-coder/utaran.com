@@ -14,6 +14,7 @@ const Register = lazy(() => import("./pages/Auth/Register"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const Cart = lazy(() => import("./pages/User/Cart"));
+const Contact = lazy(() => import("./pages/Contact"));
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetails />} />
+          <Route path="/contact" element={<Contact />} />
 
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
