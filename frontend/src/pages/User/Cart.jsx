@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getCart, updateCartItem, removeCartItem } from "../../api/cart.api";
+import { CartPageSkeleton } from "../../components/PageSkeleton";
+import ProductImage from "../../components/ProductImage";
 
 export default function Cart() {
   const [cart, setCart] = useState([]);
@@ -50,11 +52,7 @@ export default function Cart() {
   );
 
   if (loading) {
-    return (
-      <div className="h-screen bg-[#080808] text-white flex items-center justify-center font-serif italic text-lg tracking-[0.2em] animate-pulse">
-        Accessing Bag...
-      </div>
-    );
+    return <CartPageSkeleton />;
   }
 
   return (
@@ -92,8 +90,10 @@ export default function Cart() {
                 >
                   {/* IMAGE */}
                   <div className="w-28 md:w-40 aspect-[3/4] bg-[#0d0d0d] border border-white/10 overflow-hidden flex-shrink-0 relative">
-                    <img
-                      src={item.product.images[0]}
+                    <ProductImage
+                      src={item.product.images?.[0]}
+                      title={item.product.title}
+                      category={item.product.category}
                       alt={item.product.title}
                       className="w-full h-full object-cover grayscale-[10%] group-hover:grayscale-0 transition-all duration-700 ease-out group-hover:scale-105"
                     />
@@ -195,7 +195,7 @@ export default function Cart() {
               <div className="flex justify-between pt-10 border-t border-white/10">
                   <div className="space-y-1">
                     <p className="text-[8px] tracking-[0.4em] uppercase text-white/30">Verified</p>
-                    <p className="text-[9px] tracking-widest text-white/70 italic">UTARAN Authentic</p>
+                    <p className="text-[9px] tracking-widest text-white/70 italic">Utaran Authentic</p>
                   </div>
                   <div className="space-y-1 text-right">
                     <p className="text-[8px] tracking-[0.4em] uppercase text-white/30">Privacy</p>

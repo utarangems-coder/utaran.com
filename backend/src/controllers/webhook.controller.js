@@ -4,6 +4,7 @@ import Order from "../models/Order.model.js";
 import Refund from "../models/Refund.model.js";
 import Product from "../models/Product.model.js";
 import { logPaymentEvent } from "../services/paymentAudit.service.js";
+import { finalizePayment } from "../services/paymentFinalizer.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import User from "../models/User.model.js";
 import Reservation from "../models/Reservation.model.js";
@@ -12,6 +13,7 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
   let event;
 
   try {
+    console.log("[Razorpay Webhook] Received event");
     const signature = req.headers["x-razorpay-signature"];
 
     const expectedSignature = crypto
@@ -33,55 +35,27 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
     if (event.event === "payment.captured") {
       const entity = event.payload.payment.entity;
 
-      const payment = await Payment.findOne({
+      const result = await finalizePayment({
         providerOrderId: entity.order_id,
+        providerPaymentId: entity.id,
+        source: "webhook_payment_captured",
+        metadata: {
+          notes: entity.notes || {},
+        },
       });
 
-      if (!payment || payment.status === "SUCCESS") {
+      if (!result.notFound && !result.conflict && !result.processing) {
         return res.json({ ok: true });
       }
 
-      payment.status = "SUCCESS";
-      payment.providerPaymentId = entity.id;
-      await payment.save();
-
-      const reservationId = entity.notes?.reservationId;
-      const reservation =
-        await Reservation.findById(reservationId).populate("product");
-
-      if (!reservation || reservation.status !== "ACTIVE") {
-        // Payment succeeded but reservation expired → admin can refund later
-        return res.json({ ok: true });
+      if (result.conflict) {
+        console.warn("[Razorpay Webhook] Captured payment without active reservation", {
+          orderId: entity.order_id,
+          paymentId: entity.id,
+          reservationFound: false,
+          reservationStatus: "INACTIVE_OR_MISSING",
+        });
       }
-
-      // Create order
-      const order = await Order.create({
-        user: reservation.user,
-        items: [
-          {
-            product: reservation.product._id,
-            title: reservation.product.title,
-            price: reservation.product.price,
-            quantity: reservation.quantity,
-          },
-        ],
-        totalAmount: payment.amount,
-        paymentStatus: "PAID",
-      });
-
-      payment.order = order._id;
-      await payment.save();
-
-      reservation.status = "COMPLETED";
-      await reservation.save();
-
-      await logPaymentEvent({
-        order: order._id,
-        user: reservation.user,
-        eventType: "PAYMENT_SUCCESS",
-        providerRef: entity.id,
-        amount: payment.amount,
-      });
 
       return res.json({ ok: true });
     }
@@ -149,15 +123,20 @@ export const razorpayWebhook = asyncHandler(async (req, res) => {
       const order = await Order.findById(payment.order);
 
       if (order) {
+        const wasAlreadyFullyRefunded = order.paymentStatus === "REFUNDED";
+
         order.paymentStatus =
           payment.status === "REFUNDED" ? "REFUNDED" : "PARTIALLY_REFUNDED";
         await order.save();
 
-        // 🔄 Restore inventory on refund
-        for (const item of order.items) {
-          await Product.findByIdAndUpdate(item.product, {
-            $inc: { quantity: item.quantity },
-          });
+        // 🔄 Restore inventory on refund ONLY when the order becomes FULLY REFUNDED,
+        // and only if we haven't already restored stock for this order.
+        if (order.paymentStatus === "REFUNDED" && !wasAlreadyFullyRefunded) {
+          for (const item of order.items) {
+            await Product.findByIdAndUpdate(item.product, {
+              $inc: { quantity: item.quantity },
+            });
+          }
         }
       }
 

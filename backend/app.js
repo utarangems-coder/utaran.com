@@ -6,18 +6,23 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-import authRoutes from "./routes/auth.routes.js";
-import productRoutes from "./routes/product.routes.js";
-import orderRoutes from "./routes/order.routes.js";
-import adminRoutes from "./routes/admin.routes.js";
-import paymentRoutes from "./routes/payment.routes.js";
-import userRoutes from "./routes/user.routes.js";
-import cartRoutes from "./routes/cart.routes.js";
+import authRoutes from "./src/routes/auth.routes.js";
+import productRoutes from "./src/routes/product.routes.js";
+import orderRoutes from "./src/routes/order.routes.js";
+import adminRoutes from "./src/routes/admin.routes.js";
+import paymentRoutes from "./src/routes/payment.routes.js";
+import userRoutes from "./src/routes/user.routes.js";
+import cartRoutes from "./src/routes/cart.routes.js";
 
-import { errorHandler } from "./middlewares/error.middleware.js";
+import { errorHandler } from "./src/middlewares/error.middleware.js";
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(helmet());
 const allowedOrigins = [
@@ -40,6 +45,9 @@ app.use(
   })
 );
 
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -77,6 +85,17 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/cart", cartRoutes);
+
+const frontendDistPath = path.resolve(__dirname, "../frontend/dist");
+const shouldServeFrontend = process.env.SERVE_FRONTEND === "true";
+
+if (shouldServeFrontend && fs.existsSync(frontendDistPath)) {
+  app.use(express.static(frontendDistPath));
+
+  app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(frontendDistPath, "index.html"));
+  });
+}
 
 app.use(errorHandler);
 

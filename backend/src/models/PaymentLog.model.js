@@ -26,6 +26,12 @@ const paymentLogSchema = new mongoose.Schema(
         "REFUND_FAILED",
         "DISPUTE_OPENED",
         "DISPUTE_CLOSED",
+        "CHECKOUT_CANCELLED_BY_USER",
+        "CHECKOUT_AUTO_EXPIRED",
+        "CHECKOUT_FAILED_EXPIRED",
+        "CHECKOUT_QUANTITY_CHANGED",
+        "AUTO_RECLAIMED",
+        "AUTO_EXPIRED",
       ],
       required: true,
     },
@@ -53,5 +59,7 @@ const paymentLogSchema = new mongoose.Schema(
 
 paymentLogSchema.index({ order: 1, createdAt: -1 });
 paymentLogSchema.index({ eventType: 1 });
+paymentLogSchema.index({ createdAt: -1 });
+paymentLogSchema.index({ eventType: 1, createdAt: -1 });
 
 export default mongoose.model("PaymentLog", paymentLogSchema);

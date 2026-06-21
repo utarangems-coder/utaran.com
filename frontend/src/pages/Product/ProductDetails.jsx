@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchProductById } from "../../api/product.api";
 import { addToCart } from "../../api/cart.api";
+import { ProductDetailsSkeleton } from "../../components/PageSkeleton";
+import ProductImage from "../../components/ProductImage";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -12,11 +14,7 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    loadProduct();
-  }, [id]);
-
-  const loadProduct = async () => {
+  const loadProduct = useCallback(async () => {
     try {
       const data = await fetchProductById(id);
       setProduct(data);
@@ -25,24 +23,44 @@ export default function ProductDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    void loadProduct();
+  }, [loadProduct]);
 
   const increment = () => { if (quantity < product.quantity) setQuantity((q) => q + 1); };
   const decrement = () => { if (quantity > 1) setQuantity((q) => q - 1); };
 
   const handleBuyNow = () => {
     if (!product || product.quantity === 0) return;
-    navigate("/checkout", { state: { productId: product._id, quantity } });
+    navigate(`/checkout?productId=${product._id}&quantity=${quantity}`, {
+      state: { productId: product._id, quantity },
+    });
   };
 
-  if (loading) return (
-    <div className="h-screen bg-[#080808] text-white flex items-center justify-center font-serif italic text-lg tracking-[0.2em] animate-pulse">
-      Accessing Database...
-    </div>
-  );
+  if (loading) return <ProductDetailsSkeleton />;
+
+  const galleryImages = Array.from({ length: 4 }, (_, index) => product?.images?.[index] || null);
+
+  if (error) {
+    return (
+      <main className="min-h-screen bg-[#080808] text-white flex items-center justify-center px-6">
+        <div className="text-center space-y-5">
+          <p className="text-xl md:text-2xl font-serif italic">{error}</p>
+          <button
+            onClick={() => navigate("/products")}
+            className="text-[10px] tracking-[0.4em] uppercase border border-white/30 px-8 py-3 hover:bg-white hover:text-black transition-all"
+          >
+            Return to Archive
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="h-screen bg-[#080808] text-white selection:bg-white selection:text-black antialiased overflow-hidden flex flex-col">
+    <main className="min-h-screen bg-[#080808] text-white selection:bg-white selection:text-black antialiased flex flex-col">
       <style>{`
         @keyframes subtleGlow {
           0% { box-shadow: 0 0 5px rgba(255,255,255,0.1); }
@@ -55,12 +73,12 @@ export default function ProductDetails() {
         .no-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
       
-      <div className="flex-1 max-w-[1600px] mx-auto w-full px-8 md:px-16 py-8 flex flex-col overflow-hidden">
+      <div className="flex-1 max-w-[1600px] mx-auto w-full px-4 sm:px-6 md:px-12 xl:px-16 py-6 md:py-8 flex flex-col">
         
-        <div className="flex-1 grid lg:grid-cols-12 gap-12 xl:gap-24 items-stretch overflow-hidden">
+        <div className="flex-1 grid lg:grid-cols-12 gap-8 md:gap-12 xl:gap-20 items-start">
           
           {/* LEFT COLUMN */}
-          <div className="lg:col-span-7 flex flex-col overflow-hidden">
+          <div className="lg:col-span-7 flex flex-col">
             <div className="mb-6">
               <button
                 onClick={() => navigate(-1)}
@@ -71,35 +89,53 @@ export default function ProductDetails() {
               </button>
             </div>
 
-            <div className="relative flex-1 overflow-hidden bg-[#0d0d0d] border border-white/5 group">
-              <img
-                src={product?.images?.[0]}
-                alt={product?.title}
-                className="w-full h-full object-contain grayscale-[15%] group-hover:grayscale-0 group-hover:scale-[1.03] transition-all duration-[800ms] ease-out"
-                loading="eager"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-              {product?.quantity === 0 && (
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                  <span className="text-[11px] tracking-[0.8em] uppercase border border-white/40 px-12 py-6 bg-black/50">Sold Out</span>
-                </div>
-              )}
+            <div className="space-y-3">
+              <div className="relative aspect-[4/5] overflow-hidden bg-[#0d0d0d] border border-white/5 group">
+                <ProductImage
+                  src={galleryImages[0]}
+                  title={product?.title}
+                  category={product?.category}
+                  alt={product?.title}
+                  className="w-full h-full object-contain grayscale-[15%] group-hover:grayscale-0 group-hover:scale-[1.03] transition-all duration-[800ms] ease-out"
+                  loading="eager"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
+                {product?.quantity === 0 && (
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                    <span className="text-[11px] tracking-[0.8em] uppercase border border-white/40 px-12 py-6 bg-black/50">Sold Out</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                {galleryImages.slice(1).map((image, index) => (
+                  <div key={`${index}-${image || "placeholder"}`} className="relative aspect-[8/15] overflow-hidden bg-[#0d0d0d] border border-white/5">
+                    <ProductImage
+                      src={image}
+                      title={product?.title}
+                      category={product?.category}
+                      alt={`${product?.title} gallery ${index + 2}`}
+                      className="w-full h-full object-cover grayscale-[10%]"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* RIGHT COLUMN */}
-          <div className="lg:col-span-5 flex flex-col space-y-8 h-full justify-center overflow-y-auto no-scrollbar pr-4">
+          <div className="lg:col-span-5 flex flex-col space-y-8 h-full justify-start lg:justify-center overflow-visible pb-8">
             
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <span className="text-[10px] tracking-[0.6em] uppercase text-white/70">{product?.category} studio</span>
                 <span className="h-[1px] w-12 bg-white/40"></span>
               </div>
-              <h1 className="text-5xl md:text-7xl font-serif italic leading-[1] tracking-tighter text-white">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl xl:text-6xl font-serif italic leading-[1.15] tracking-tight text-white">
                 {product?.title}
               </h1>
-              <div className="flex items-center gap-10 pt-2">
-                <span className="text-3xl font-light tracking-tight italic">₹{product?.price.toLocaleString()}</span>
+              <div className="flex flex-wrap items-start gap-5 md:gap-8 pt-2">
+                <span className="text-2xl md:text-3xl font-light tracking-tight italic">₹{product?.price.toLocaleString()}</span>
                 <div className="flex flex-col border-l border-white/20 pl-6">
                   <span className={`text-[10px] tracking-widest uppercase font-bold ${product?.quantity === 0 ? 'text-red-400' : 'text-white'}`}>
                     {product?.quantity === 0 ? "Currently Unavailable" : "Archive Certified"}
@@ -109,15 +145,15 @@ export default function ProductDetails() {
               </div>
             </div>
 
-            <div className="max-w-md">
-              <p className="text-white/80 text-[13px] md:text-sm leading-relaxed font-light tracking-wide italic">
+            <div className="max-w-xl">
+              <p className="text-white/80 text-sm md:text-base leading-relaxed font-light tracking-wide italic">
                 {product?.description || "A masterfully crafted piece emphasizing the Utaran philosophy of timeless silhouette and refined materiality."}
               </p>
             </div>
 
             <div className="w-full h-px bg-gradient-to-r from-white/30 to-transparent" />
 
-            <div className="space-y-10 max-w-sm">
+            <div className="space-y-10 max-w-md w-full">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] tracking-[0.5em] uppercase text-white/80 font-medium italic">Quantity Selector</span>
                 <div className="flex items-center border border-white/30 bg-[#111] overflow-hidden">
@@ -186,7 +222,7 @@ export default function ProductDetails() {
         </div>
       </div>
 
-      <footer className="px-16 py-6 border-t border-white/10 flex justify-between items-center text-[9px] tracking-[0.6em] uppercase text-white/40">
+      <footer className="px-4 sm:px-6 md:px-12 xl:px-16 py-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 text-[9px] tracking-[0.6em] uppercase text-white/40">
          <span>Utaran Studio MMXXVI</span>
          <div className="flex gap-10">
             <span className="hidden md:block">Sustainable / Timeless / Refined</span>

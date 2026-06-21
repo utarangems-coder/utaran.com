@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { fetchProducts } from "../../api/product.api";
 import useDebounce from "../../hooks/useDebounce";
 import ProductSkeleton from "../../components/ProductSkeleton";
 import { PRODUCT_CATEGORIES } from "../../api/categoryConstant";
+import ProductImage from "../../components/ProductImage";
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest Arrivals" },
@@ -14,6 +15,7 @@ const SORT_OPTIONS = [
 const CATEGORIES = ["All", ...PRODUCT_CATEGORIES];
 
 export default function Products() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -22,21 +24,17 @@ export default function Products() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
-  const [category, setCategory] = useState("All");
+  const initialCategory = searchParams.get("category");
+  const [category, setCategory] = useState(
+    initialCategory && CATEGORIES.includes(initialCategory) ? initialCategory : "All"
+  );
+  const loadingRef = useRef(false);
 
   const debouncedSearch = useDebounce(search, 400);
 
-  useEffect(() => {
-    setPage(1);
-    loadProducts(1, true);
-  }, [debouncedSearch, sort, category]);
-
-  useEffect(() => {
-    if (page > 1) loadProducts(page);
-  }, [page]);
-
-  const loadProducts = async (pageToLoad, replace = false) => {
-    if (loading) return;
+  const loadProducts = useCallback(async (pageToLoad, replace = false) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
 
     try {
@@ -54,15 +52,45 @@ export default function Products() {
     } catch (error) {
       console.error("Archive fetch error:", error);
     } finally {
+      loadingRef.current = false;
       setLoading(false);
       setInitialLoading(false);
     }
-  };
+  }, [debouncedSearch, sort, category]);
+
+  useEffect(() => {
+    setPage(1);
+    void loadProducts(1, true);
+  }, [debouncedSearch, sort, category, loadProducts]);
+
+  useEffect(() => {
+    const queryCategory = searchParams.get("category");
+    if (queryCategory && CATEGORIES.includes(queryCategory) && queryCategory !== category) {
+      setCategory(queryCategory);
+    }
+    if (!queryCategory && category !== "All") {
+      setCategory("All");
+    }
+  }, [searchParams, category]);
+
+  useEffect(() => {
+    if (page > 1) void loadProducts(page);
+  }, [page, loadProducts]);
 
   const resetFilters = () => {
     setSearch("");
     setCategory("All");
     setSort("newest");
+    setSearchParams({});
+  };
+
+  const handleCategoryChange = (value) => {
+    setCategory(value);
+    if (value === "All") {
+      setSearchParams({});
+      return;
+    }
+    setSearchParams({ category: value });
   };
 
   return (
@@ -113,7 +141,7 @@ export default function Products() {
               {CATEGORIES.map((c) => (
                 <button
                   key={c}
-                  onClick={() => setCategory(c)}
+                  onClick={() => handleCategoryChange(c)}
                   className={`text-[10px] tracking-[0.3em] uppercase transition-all duration-300 whitespace-nowrap relative pb-1 ${
                     category === c ? "text-white" : "text-white/40 hover:text-white"
                   }`}
@@ -167,22 +195,24 @@ export default function Products() {
         </div>
 
         {/* STAGGERED GRID */}
-        <div className="stagger-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-24 mb-32">
+        <div className={`stagger-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-24 mb-32 transition-opacity duration-300 ${loading && !initialLoading ? "opacity-50 pointer-events-none" : ""}`}>
           {initialLoading
             ? Array.from({ length: 6 }).map((_, i) => <ProductSkeleton key={i} />)
             : products.map((p, idx) => (
                 <Link
                   key={p._id}
                   to={`/products/${p._id}`}
-                  className={`product-item group block product-card-reveal ${p.stock === 0 ? 'pointer-events-none' : ''}`}
+                  className={`product-item group block product-card-reveal ${p.quantity === 0 ? 'pointer-events-none' : ''}`}
                   style={{ animationDelay: `${idx * 0.05}s` }}
                 >
                   <div className="bg-[#0f0f0f] p-5 transition-all duration-500 group-hover:bg-[#141414] border border-white/5 relative">
                     <div className="relative aspect-[4/5] overflow-hidden mb-8 bg-[#050505]">
-                      <img
-                        src={p.images[0]}
+                      <ProductImage
+                        src={p.images?.[0]}
+                        title={p.title}
+                        category={p.category}
                         alt={p.title}
-                        className={`h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-105 ${p.stock === 0 ? 'grayscale opacity-25' : 'grayscale-[15%] group-hover:grayscale-0'}`}
+                        className={`h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-105 ${p.quantity === 0 ? 'grayscale opacity-25' : 'grayscale-[15%] group-hover:grayscale-0'}`}
                         loading="lazy"
                       />
                     </div>
@@ -197,7 +227,7 @@ export default function Products() {
                         </p>
                       </div>
 
-                      {p.stock === 0 ? (
+                      {p.quantity === 0 ? (
                         <div className="text-[9px] tracking-[0.2em] uppercase text-white/40 border border-white/10 px-3 py-1.5 bg-white/[0.03]">
                           Sold Out
                         </div>

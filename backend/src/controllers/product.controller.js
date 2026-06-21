@@ -2,12 +2,44 @@ import Product from "../models/Product.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { isValidObjectId } from "../utils/isValidObject.js";
 
-export const createProduct = asyncHandler(async (req, res) => {
-  const images = req.files.map((file) => file.path);
+const MAX_PRODUCT_IMAGES = 4;
 
-  const product = await Product.create({ ...req.body, images });
-  res.status(201).json(product);
+const extractUploadedImages = (files = []) =>
+  files.map((file) => file.path || file.url || file.secure_url).filter(Boolean);
+
+const capImages = (images = []) => images.filter(Boolean).slice(0, MAX_PRODUCT_IMAGES);
+
+const parseTags = (tags) => {
+  if (!tags) return tags;
+
+  if (typeof tags === "string") {
+    try {
+      return JSON.parse(tags);
+    } catch {
+      return tags.split(",").map((tag) => tag.trim());
+    }
+  }
+
+  return tags;
+};
+
+export const createProduct = asyncHandler(async (req, res) => {
+  try {
+    const images = capImages(extractUploadedImages(req.files));
+    let { tags, ...rest } = req.body;
+
+    // Gracefully handle tags from FormData
+    tags = parseTags(tags);
+
+    const product = await Product.create({ ...rest, tags, images });
+    res.status(201).json(product);
+  } catch (error) {
+    console.error("Product Creation Error:", error);
+    res.status(500).json({ message: error.message || "Failed to create product" });
+  }
 });
+
+import { reclaimExpiredStock } from "../services/reclaim.service.js";
 
 export const getAllProducts = asyncHandler(async (req, res) => {
   const {
@@ -78,17 +110,34 @@ export const getAllProducts = asyncHandler(async (req, res) => {
 });
 
 export const updateProduct = asyncHandler(async (req, res) => {
-  const updateData = { ...req.body };
+  try {
+    const updateData = { ...req.body };
+    const existingProduct = await Product.findById(req.params.id);
 
-  if (req.files?.length) {
-    updateData.images = req.files.map((file) => file.path);
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    updateData.images = capImages([
+      ...(existingProduct.images || []),
+      ...extractUploadedImages(req.files),
+    ]);
+
+    updateData.tags = parseTags(updateData.tags);
+
+    const product = await Product.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.json(product);
+  } catch (error) {
+    console.error("Product Update Error:", error);
+    res.status(500).json({ message: error.message || "Failed to update product" });
   }
-
-  const product = await Product.findByIdAndUpdate(req.params.id, updateData, {
-    new: true,
-  });
-
-  res.json(product);
 });
 
 export const deleteProduct = asyncHandler(async (req, res) => {
@@ -114,6 +163,17 @@ export const getProductById = asyncHandler(async (req, res) => {
 
   if (!product) {
     return res.status(404).json({ message: "Product not found" });
+  }
+
+  // SURGICAL RECLAMATION (Lean Mode):
+  // Only trigger if stock is low (0 or 1) to avoid unnecessary DB hits.
+  if (product.quantity <= 1) {
+    const reclaimed = await reclaimExpiredStock(req.params.id);
+    if (reclaimed > 0) {
+      // Re-fetch only if something was actually reclaimed
+      const freshProduct = await Product.findById(req.params.id);
+      return res.json(freshProduct);
+    }
   }
 
   res.json(product);
@@ -204,10 +264,17 @@ export const getAdminProducts = asyncHandler(async (req, res) => {
     }));
   }
 
-  const skip = (Number(page) - 1) * Number(limit);
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
+  const skip = (pageNumber - 1) * limitNumber;
 
   const [products, total] = await Promise.all([
-    Product.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+    Product.find(query)
+      .select("title price quantity images isActive category description tags createdAt updatedAt")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNumber)
+      .lean(),
     Product.countDocuments(query),
   ]);
 
@@ -215,9 +282,9 @@ export const getAdminProducts = asyncHandler(async (req, res) => {
     data: products,
     pagination: {
       total,
-      page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(total / limit),
+      page: pageNumber,
+      limit: limitNumber,
+      totalPages: Math.ceil(total / limitNumber),
       hasMore: skip + products.length < total,
     },
   });

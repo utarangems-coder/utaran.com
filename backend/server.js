@@ -2,13 +2,17 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import app from "./app.js";
-import { connectDB } from "./config/mongoDB.js";
+import { connectDB } from "./src/config/mongoDB.js";
+import { reclaimExpiredStock } from "./src/services/reclaim.service.js";
 
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
     await connectDB();
+
+    await reclaimExpiredStock();
+
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });

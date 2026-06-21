@@ -1,4 +1,7 @@
 import Order from "../models/Order.model.js";
+import Payment from "../models/Payment.model.js";
+import Refund from "../models/Refund.model.js";
+import PaymentLog from "../models/PaymentLog.model.js";
 import Product from "../models/Product.model.js";
 import { isValidObjectId } from "../utils/isValidObject.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -63,7 +66,8 @@ export const getMyOrders = asyncHandler(async (req, res) => {
     Order.find({ user: req.user.id })
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit),
+      .limit(limit)
+      .populate("payment", "providerPaymentId providerOrderId amount createdAt"),
     Order.countDocuments({ user: req.user.id }),
   ]);
 
@@ -86,78 +90,103 @@ export const getAllOrders = asyncHandler(async (req, res) => {
     limit = 10,
   } = req.query;
 
+  const pageNumber = Number(page);
+  const limitNumber = Number(limit);
+  const skip = (pageNumber - 1) * limitNumber;
+
   const match = {};
 
   if (paymentStatus) match.paymentStatus = paymentStatus;
   if (fulfillmentStatus) match.fulfillmentStatus = fulfillmentStatus;
 
-  const skip = (page - 1) * limit;
+  const pipeline = [{ $match: match }];
 
-  const pipeline = [
-    { $match: match },
-
-    // 👤 User
-    {
-      $lookup: {
-        from: "users",
-        localField: "user",
-        foreignField: "_id",
-        as: "user",
-      },
+  pipeline.push({
+    $lookup: {
+      from: "users",
+      let: { userId: "$user" },
+      pipeline: [
+        {
+          $match: {
+            $expr: { $eq: ["$_id", "$$userId"] },
+          },
+        },
+        {
+          $project: {
+            name: 1,
+            email: 1,
+            phone: 1,
+          },
+        },
+      ],
+      as: "user",
     },
-    { $unwind: "$user" },
+  });
 
-    // 💳 Payment (THIS FIXES REFUNDS)
-    {
-      $lookup: {
-        from: "payments",
-        localField: "_id",
-        foreignField: "order",
-        as: "payment",
-      },
+  pipeline.push({
+    $unwind: {
+      path: "$user",
+      preserveNullAndEmptyArrays: true,
     },
-    {
-      $unwind: {
-        path: "$payment",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-  ];
+  });
 
-  // 🔍 Search by email / name / orderId
   if (search) {
+    const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
     pipeline.push({
       $match: {
         $or: [
-          { "user.email": { $regex: search, $options: "i" } },
-          { "user.name": { $regex: search, $options: "i" } },
-          { _id: { $regex: search, $options: "i" } },
+          { "user.email": { $regex: escapedSearch, $options: "i" } },
+          { "user.name": { $regex: escapedSearch, $options: "i" } },
+          { "items.title": { $regex: escapedSearch, $options: "i" } },
+          {
+            $expr: {
+              $regexMatch: {
+                input: { $toString: "$_id" },
+                regex: escapedSearch,
+                options: "i",
+              },
+            },
+          },
         ],
       },
     });
   }
 
-  pipeline.push(
-    { $sort: { createdAt: -1 } },
+  const countPipeline = [...pipeline, { $count: "count" }];
+
+  const dataPipeline = [
+    ...pipeline,
     {
-      $facet: {
-        data: [{ $skip: skip }, { $limit: Number(limit) }],
-        total: [{ $count: "count" }],
+      $project: {
+        user: 1,
+        items: 1,
+        totalAmount: 1,
+        paymentStatus: 1,
+        fulfillmentStatus: 1,
+        createdAt: 1,
+        updatedAt: 1,
       },
     },
-  );
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limitNumber },
+  ];
 
-  const result = await Order.aggregate(pipeline);
+  const [dataResult, countResult] = await Promise.all([
+    Order.aggregate(dataPipeline),
+    Order.aggregate(countPipeline),
+  ]);
 
-  const orders = result[0].data;
-  const total = result[0].total[0]?.count || 0;
+  const orders = dataResult;
+  const total = countResult[0]?.count || 0;
 
   res.json({
     data: orders,
     pagination: {
       total,
-      page: Number(page),
-      pages: Math.ceil(total / limit),
+      page: pageNumber,
+      pages: Math.ceil(total / limitNumber),
     },
   });
 });
@@ -173,6 +202,49 @@ export const getOrderById = asyncHandler(async (req, res) => {
   }
 
   res.json(order);
+});
+
+export const getAdminOrderDetail = asyncHandler(async (req, res) => {
+  if (!isValidObjectId(req.params.id)) {
+    return res.status(400).json({ message: "Invalid order ID" });
+  }
+
+  const order = await Order.findById(req.params.id)
+    .populate("user", "name email phone")
+    .populate({ path: "payment" })
+    .lean();
+
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+
+  const payment =
+    order.payment ||
+    (await Payment.findOne({ order: order._id })
+      .select(
+        "amount refundedAmount status providerOrderId providerPaymentId finalizationState order createdAt updatedAt",
+      )
+      .lean());
+
+  const [paymentLogs, refunds] = await Promise.all([
+    PaymentLog.find({ order: order._id })
+      .sort({ createdAt: -1 })
+      .select("eventType providerRef amount metadata createdAt")
+      .lean(),
+    payment
+      ? Refund.find({ payment: payment._id })
+          .sort({ createdAt: -1 })
+          .select("amount status providerRefundId createdAt updatedAt")
+          .lean()
+      : Promise.resolve([]),
+  ]);
+
+  return res.json({
+    order,
+    payment,
+    paymentLogs,
+    refunds,
+  });
 });
 
 export const updateOrderStatus = asyncHandler(async (req, res) => {

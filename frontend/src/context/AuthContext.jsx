@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from "react";
 import { loginUser, logoutUser, getMyProfile } from "../api/auth.api";
 import { useRef } from "react";
@@ -36,6 +37,15 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     loadUser();
+
+    const handleGlobalLogout = () => {
+      setUser(null);
+    };
+
+    window.addEventListener("auth-logout", handleGlobalLogout);
+    return () => {
+      window.removeEventListener("auth-logout", handleGlobalLogout);
+    };
   }, []);
 
   const login = async (credentials) => {
@@ -50,6 +60,10 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const updateUser = (updates) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : prev));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -58,6 +72,8 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         isAuthenticated: !!user,
+        refreshUser: loadUser,
+        updateUser,
       }}
     >
       {children}

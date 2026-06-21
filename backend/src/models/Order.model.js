@@ -21,6 +21,14 @@ const orderSchema = new mongoose.Schema(
       },
     ],
 
+    payment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
+      index: true,
+      unique: true,
+      sparse: true,
+    },
+
     totalAmount: {
       type: Number,
       required: true,
@@ -45,5 +53,8 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.index({ createdAt: -1 });
 orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ paymentStatus: 1, createdAt: -1 });
+orderSchema.index({ fulfillmentStatus: 1, createdAt: -1 });
+orderSchema.index({ "items.title": 1 });
 
 export default mongoose.model("Order", orderSchema);

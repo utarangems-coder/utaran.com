@@ -2,6 +2,8 @@ import { useState } from "react";
 import { createProduct, updateProduct } from "../../api/admin.product.api";
 import { PRODUCT_CATEGORIES } from "../../api/categoryConstant";
 
+const MAX_PRODUCT_IMAGES = 4;
+
 export default function ProductForm({ product = {}, onClose, onSaved }) {
   const isEdit = Boolean(product._id);
 
@@ -15,52 +17,101 @@ export default function ProductForm({ product = {}, onClose, onSaved }) {
   });
 
   const [images, setImages] = useState([]);
+  const [saving, setSaving] = useState(false);
+
+  const existingImages = Array.isArray(product.images) ? product.images.slice(0, MAX_PRODUCT_IMAGES) : [];
 
   const inputClass =
-    "w-full p-3 bg-[#1c1c1c] text-white border border-[#2a2a2a] placeholder-gray-500 focus:outline-none focus:border-white transition";
+    "w-full p-3 bg-transparent text-white border border-white/20 placeholder-white/30 focus:outline-none focus:border-white/50 transition";
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleImageChange = (e) => {
+    const selectedFiles = Array.from(e.target.files || []);
 
-    const payload = {
-      ...form,
-      tags: form.tags
-        ? form.tags.split(",").map((t) => t.trim().toLowerCase())
-        : [],
-    };
-
-    const data = new FormData();
-    Object.entries(payload).forEach(([k, v]) => {
-      data.append(k, Array.isArray(v) ? JSON.stringify(v) : v);
-    });
-
-    images.forEach((img) => data.append("images", img));
-
-    if (isEdit) {
-      await updateProduct(product._id, data);
-    } else {
-      await createProduct(data);
+    if (selectedFiles.length > MAX_PRODUCT_IMAGES) {
+      alert(`You can upload up to ${MAX_PRODUCT_IMAGES} images.`);
     }
 
-    onSaved();
-    onClose();
+    setImages(selectedFiles.slice(0, MAX_PRODUCT_IMAGES));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+
+    // --- GRACEFUL RETRY LOGIC ---
+    const MAX_RETRIES = 3;
+    const initialDelay = 1000; // 1 second
+
+    const executeWithRetry = async (attempt = 0) => {
+      try {
+        const payload = { ...form };
+        const data = new FormData();
+        
+        // Append text fields
+        Object.entries(payload).forEach(([k, v]) => {
+          if (k !== "tags") data.append(k, v);
+        });
+
+        // Append tags correctly (backend now handles comma-separated string)
+        data.append("tags", form.tags);
+
+        // Append images
+        images.forEach((img) => data.append("images", img));
+
+        if (isEdit) {
+          await updateProduct(product._id, data);
+        } else {
+          await createProduct(data);
+        }
+
+        onSaved();
+        onClose();
+      } catch (err) {
+        const isRetryable = !err.response || err.response.status >= 500;
+        
+        if (isRetryable && attempt < MAX_RETRIES) {
+          const delay = initialDelay * Math.pow(2, attempt);
+          console.warn(`Attempt ${attempt + 1} failed. Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return executeWithRetry(attempt + 1);
+        }
+
+        // If not retryable or max retries reached, throw the error
+        console.error("Final attempt failed:", err);
+        alert(err.response?.data?.message || "Action failed after multiple attempts. Please check your connection.");
+      }
+    };
+
+    try {
+      await executeWithRetry();
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <form
         onSubmit={handleSubmit}
-        className="bg-[#0b0b0b] border border-[#2a2a2a] p-8 w-full max-w-lg"
+        className="bg-[#0a0a0a] border border-white/12 p-6 md:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-[0_20px_80px_rgba(0,0,0,0.5)]"
       >
-        <h2 className="text-xl mb-6">
-          {isEdit ? "Edit Product" : "Add Product"}
-        </h2>
+        <div className="border-b border-white/12 pb-6 mb-6">
+          <p className="text-[9px] uppercase tracking-[0.55em] text-white/35 mb-3">
+            Catalog Editor
+          </p>
+          <h2 className="text-3xl font-serif italic tracking-tight text-white">
+            {isEdit ? "Update Product" : "Create Product"}
+          </h2>
+          <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mt-2">
+            {isEdit ? "Edit catalog entry" : "Add new catalog entry"}
+          </p>
+        </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <input
             name="title"
             placeholder="Product title"
@@ -75,11 +126,11 @@ export default function ProductForm({ product = {}, onClose, onSaved }) {
             placeholder="Product description"
             value={form.description}
             onChange={handleChange}
-            className={`${inputClass} h-28 resize-none`}
+            className={`${inputClass} h-32 resize-none`}
             required
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               name="price"
               type="number"
@@ -108,9 +159,11 @@ export default function ProductForm({ product = {}, onClose, onSaved }) {
             className={inputClass}
             required
           >
-            <option value="">Select category</option>
+            <option value="" className="bg-black">
+              Select category
+            </option>
             {PRODUCT_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
+              <option key={cat} value={cat} className="bg-black">
                 {cat}
               </option>
             ))}
@@ -119,37 +172,55 @@ export default function ProductForm({ product = {}, onClose, onSaved }) {
           <input
             placeholder="Tags (comma separated)"
             value={form.tags}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, tags: e.target.value }))
-            }
+            onChange={(e) => setForm((prev) => ({ ...prev, tags: e.target.value }))}
             className={inputClass}
           />
 
-          <div className="text-sm text-gray-400">
-            Product Images
+          <div className="border border-white/15 p-4 rounded bg-white/[0.02]">
+            <div className="flex items-center justify-between gap-4 mb-3">
+              <p className="text-[10px] tracking-[0.25em] uppercase text-white/50">Product Images</p>
+              <span className="text-[9px] tracking-[0.25em] uppercase text-white/35">
+                Max {MAX_PRODUCT_IMAGES}
+              </span>
+            </div>
             <input
               type="file"
               multiple
-              onChange={(e) => setImages([...e.target.files])}
-              className="mt-2 block"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="block text-sm text-white/70"
             />
+            <p className="text-xs text-white/40 mt-3">
+              The catalog allows up to 4 total images per product. New uploads are added after the existing images and the first image remains the primary card image.
+            </p>
+
+            {existingImages.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {existingImages.map((image, index) => (
+                  <div key={image} className="border border-white/10 bg-black/30 overflow-hidden">
+                    <img src={image} alt={`${form.title || "Product"} ${index + 1}`} className="w-full h-24 object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 mt-8">
+        <div className="flex flex-col-reverse md:flex-row md:justify-end gap-3 mt-8">
           <button
             type="button"
             onClick={onClose}
-            className="border px-4 py-2 text-gray-400 hover:text-white transition"
+            className="border border-white/15 px-5 py-3 text-white/70 hover:text-white hover:border-white/35 transition"
           >
             Cancel
           </button>
 
           <button
             type="submit"
-            className="border border-white px-6 py-2 hover:bg-white hover:text-black transition"
+            disabled={saving}
+            className="bg-white text-black px-8 py-3 text-[11px] font-black uppercase tracking-[0.3em] disabled:opacity-70 hover:bg-white/90 transition"
           >
-            Save
+            {saving ? "Saving..." : "Save"}
           </button>
         </div>
       </form>

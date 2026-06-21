@@ -1,28 +1,34 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchProducts } from "../api/product.api";
+import ProductImage from "../components/ProductImage";
 
 export default function Home() {
   const [featured, setFeatured] = useState([]);
 
   useEffect(() => {
-    document.title = "UTARAN — Contemporary Fashion";
+    document.title = "Utaran — Contemporary Fashion";
   }, []);
 
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollToTop = useCallback(() => window.scrollTo({ top: 0, behavior: "smooth" }), []);
 
   useEffect(() => {
-    loadFeatured();
-  }, []);
+    let cancelled = false;
 
-  const loadFeatured = async () => {
-    try {
-      const res = await fetchProducts({ page: 1, limit: 6 });
-      setFeatured(res.data);
-    } catch {
-      console.error("Failed to load featured products");
-    }
-  };
+    void fetchProducts({ page: 1, limit: 6 })
+      .then((res) => {
+        if (!cancelled) {
+          setFeatured(res.data);
+        }
+      })
+      .catch(() => {
+        console.error("Failed to load featured products");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const CATEGORIES = [
     { label: "Clothing", image: "v1769428087/photo-1523381210434-271e8be1f52b_efjya5.jpg" },
@@ -43,6 +49,7 @@ export default function Home() {
         .animate-reveal {
           animation: revealUp 1s cubic-bezier(0.19, 1, 0.22, 1) forwards;
           opacity: 0;
+          will-change: transform, opacity;
         }
         
         /* UPDATED: Consistent Row Symmetry (Up, Down, Up) */
@@ -120,20 +127,28 @@ export default function Home() {
             <Link 
               key={product._id} 
               to={`/products/${product._id}`} 
-              className="staggered-item group relative block transition-all duration-500"
+              className={`staggered-item group relative block transition-all duration-500 ${product.quantity === 0 ? 'pointer-events-none' : ''}`}
             >
               <div className="bg-[#111] p-5 rounded-sm group-hover:bg-[#151515] transition-colors duration-500">
                 <div className="relative aspect-[4/5] overflow-hidden mb-8 shadow-2xl">
-                    <img
-                    src={product.images[0]}
+                    <ProductImage
+                    src={product.images?.[0]}
+                    title={product.title}
+                    category={product.category}
                     loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    className={`w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 ${product.quantity === 0 ? 'grayscale opacity-25' : ''}`}
                     alt={product.title}
                     />
                     <div className="absolute top-4 left-4">
-                    <span className="bg-white text-black px-3 py-1 text-[8px] font-bold tracking-[0.1em] uppercase rounded-sm">
-                        New
-                    </span>
+                    {product.quantity === 0 ? (
+                      <span className="bg-red-500 text-white px-3 py-1 text-[8px] font-bold tracking-[0.1em] uppercase rounded-sm">
+                          Sold Out
+                      </span>
+                    ) : (
+                      <span className="bg-white text-black px-3 py-1 text-[8px] font-bold tracking-[0.1em] uppercase rounded-sm">
+                          New
+                      </span>
+                    )}
                     </div>
                 </div>
 
@@ -147,9 +162,11 @@ export default function Home() {
                     </p>
                     </div>
 
-                    <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full border border-white/10 text-[11px] font-medium group-hover:bg-white group-hover:text-black transition-all duration-500">
-                    ₹{product.price.toLocaleString()}
-                    </div>
+                    {product.quantity > 0 && (
+                      <div className="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full border border-white/10 text-[11px] font-medium group-hover:bg-white group-hover:text-black transition-all duration-500">
+                      ₹{product.price.toLocaleString()}
+                      </div>
+                    )}
                 </div>
               </div>
             </Link>
@@ -161,12 +178,23 @@ export default function Home() {
       <section className="bg-[#0c0c0c] py-48 px-4">
         <div className="max-w-[1500px] mx-auto">
           <div className="text-center mb-24">
-             <h2 className="text-[10px] tracking-[0.6em] uppercase text-gray-500 mb-4 block">Shop by category</h2>
-             <p className="text-3xl font-serif italic">Curated Essentials</p>
+            <h2 className="text-[10px] tracking-[0.6em] uppercase text-gray-500 mb-4 block">Shop by category</h2>
+             <Link
+               to="/products?category=Clothing"
+               onClick={scrollToTop}
+               className="text-3xl font-serif italic inline-block hover:text-white/80 transition-colors duration-300"
+             >
+               Curated Essentials
+             </Link>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {CATEGORIES.map((cat) => (
-              <Link key={cat.label} to={`/products?category=${cat.label}`} className="group relative h-[70vh] overflow-hidden">
+              <Link
+                key={cat.label}
+                to={`/products?category=${cat.label}`}
+                onClick={scrollToTop}
+                className="group relative h-[70vh] overflow-hidden transform-gpu"
+              >
                 <img
                   src={getOptimizedUrl(cat.image, 1000)}
                   alt={cat.label}
@@ -217,7 +245,7 @@ export default function Home() {
       {/* FOOTER */}
       <footer className="border-t border-white/5 py-32 px-8 bg-[#080808]">
         <div className="max-w-7xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-16 mb-24">
+          <div className="grid md:grid-cols-5 gap-16 mb-24">
             <div className="col-span-1 md:col-span-1">
               <h2 className="text-2xl font-serif italic mb-8">Utaran</h2>
               <p className="text-[11px] text-gray-500 tracking-widest leading-relaxed uppercase">
@@ -234,8 +262,16 @@ export default function Home() {
             <div>
               <h4 className="text-[10px] tracking-[0.4em] uppercase mb-8 text-gray-400">Company</h4>
               <ul className="space-y-4 text-[10px] text-gray-500 tracking-widest uppercase">
-                <li><a href="#" className="hover:text-white transition">Sustainability</a></li>
-                <li><a href="#" className="hover:text-white transition">Fabric Care</a></li>
+                <li><Link to="/about" onClick={scrollToTop} className="hover:text-white transition">About Us</Link></li>
+                <li><Link to="/contact" onClick={scrollToTop} className="hover:text-white transition">Contact</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-[10px] tracking-[0.4em] uppercase mb-8 text-gray-400">Legal</h4>
+              <ul className="space-y-4 text-[10px] text-gray-500 tracking-widest uppercase">
+                <li><Link to="/terms-and-conditions" onClick={scrollToTop} className="hover:text-white transition">Terms & Conditions</Link></li>
+                <li><Link to="/refund-policy" onClick={scrollToTop} className="hover:text-white transition">Refund Policy</Link></li>
+                <li><Link to="/privacy-policy" onClick={scrollToTop} className="hover:text-white transition">Privacy Policy</Link></li>
               </ul>
             </div>
             <div>
@@ -248,11 +284,12 @@ export default function Home() {
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center pt-12 border-t border-white/5 gap-6">
             <p className="text-[9px] tracking-[0.5em] uppercase text-gray-600">
-              © {new Date().getFullYear()} UTARAN STUDIO
+              © {new Date().getFullYear()} Utaran STUDIO
             </p>
-            <div className="flex gap-12 text-[9px] tracking-[0.5em] uppercase text-gray-600">
-              <a href="#" className="hover:text-white transition">Privacy</a>
-              <a href="#" className="hover:text-white transition">Accessibility</a>
+            <div className="flex flex-wrap justify-center gap-x-12 gap-y-3 text-[9px] tracking-[0.5em] uppercase text-gray-600">
+              <Link to="/privacy-policy" onClick={scrollToTop} className="hover:text-white transition">Privacy</Link>
+              <Link to="/terms-and-conditions" onClick={scrollToTop} className="hover:text-white transition">Terms</Link>
+              <Link to="/refund-policy" onClick={scrollToTop} className="hover:text-white transition">Refunds</Link>
             </div>
           </div>
         </div>
