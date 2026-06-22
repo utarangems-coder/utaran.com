@@ -22,11 +22,11 @@ export default function PrivacyPolicy() {
           Privacy Policy
         </h1>
 
-        <p className="text-sm text-gray-500 mb-16">Last updated: [Date]</p>
+        <p className="text-sm text-gray-500 mb-16">Last updated: 22nd June 2026 </p>
 
         {/* Intro */}
         <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-16">
-          [Your Brand Name] ("we", "us") respects your
+          Utaran respects your
           privacy. This page explains what information we collect when you use
           our website and how we use it.
         </p>

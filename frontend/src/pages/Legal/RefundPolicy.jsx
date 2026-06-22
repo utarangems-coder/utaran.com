@@ -24,7 +24,7 @@ export default function RefundPolicy() {
 
         {/* Last updated */}
         <p className="text-[10px] tracking-[0.4em] uppercase text-gray-500 mb-16">
-          Last updated: [Date]
+          Last updated: 22nd June 2026
         </p>
 
         {/* Intro */}

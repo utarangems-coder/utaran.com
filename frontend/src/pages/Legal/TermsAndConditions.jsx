@@ -22,12 +22,12 @@ export default function TermsAndConditions() {
           Terms and Conditions
         </h1>
         <p className="text-[10px] tracking-[0.4em] uppercase text-gray-500 mb-16">
-          Last updated: [Date]
+          Last updated: 22nd June 2026
         </p>
 
         {/* Intro */}
         <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-16">
-          Welcome to [Your Brand Name]. By accessing or using this website, you
+          Welcome to Utaran. By accessing or using this website, you
           agree to the following terms.
         </p>
 
@@ -40,7 +40,7 @@ export default function TermsAndConditions() {
             </p>
             <h2 className="text-white font-medium text-lg mb-4">About Us</h2>
             <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-              [Your Brand Name] is a small, student-run online store selling
+              Utaran is a small, student-run online store selling
               thrifted/second-hand clothing. We are an individual seller, not a
               registered company.
             </p>
