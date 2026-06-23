@@ -42,8 +42,18 @@ export default function Register() {
     setError("");
     setLoading(true);
 
+    // Clean up address payload if the optional fields are left blank
+    const payload = { ...form };
+    const hasAddressInput = Object.values(payload.address || {}).some(
+      (value) => value && value.trim() !== ""
+    );
+
+    if (!hasAddressInput) {
+      delete payload.address;
+    }
+
     try {
-      await registerUser(form);
+      await registerUser(payload);
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");

@@ -4,16 +4,25 @@ export const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
   email: z.string().trim().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  address: z.object({
-    fullName: z.string().trim().min(1, "Full name is required"),
-    phone: z.string().trim().min(7, "Phone number is invalid"),
-    line1: z.string().trim().min(1, "Address line 1 is required"),
-    line2: z.string().trim().optional(),
-    city: z.string().trim().min(1, "City is required"),
-    state: z.string().trim().min(1, "State is required"),
-    postalCode: z.string().trim().min(3, "Postal code is invalid"),
-    country: z.string().trim().default("India"),
-  }).optional(),
+  address: z.preprocess(
+    (val) => {
+      if (val && typeof val === "object") {
+        const isEmpty = Object.values(val).every((v) => !v || String(v).trim() === "");
+        if (isEmpty) return undefined;
+      }
+      return val;
+    },
+    z.object({
+      fullName: z.string().trim().min(1, "Full name is required"),
+      phone: z.string().trim().min(7, "Phone number is invalid"),
+      line1: z.string().trim().min(1, "Address line 1 is required"),
+      line2: z.string().trim().optional(),
+      city: z.string().trim().min(1, "City is required"),
+      state: z.string().trim().min(1, "State is required"),
+      postalCode: z.string().trim().min(3, "Postal code is invalid"),
+      country: z.string().trim().default("India"),
+    }).optional()
+  ),
 });
 
 export const loginSchema = z.object({
