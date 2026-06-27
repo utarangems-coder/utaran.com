@@ -53,6 +53,16 @@ function buildPlaceholder(title = "Utaran Archive", category = "Signature Piece"
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+const getOptimizedSrc = (url) => {
+  if (!url || typeof url !== "string") return url;
+  if (url.includes("res.cloudinary.com") && url.includes("/image/upload")) {
+    if (!url.includes("f_auto") && !url.includes("q_auto")) {
+      return url.replace("/image/upload", "/image/upload/f_auto,q_auto");
+    }
+  }
+  return url;
+};
+
 export default function ProductImage({
   src,
   title = "Product",
@@ -63,7 +73,7 @@ export default function ProductImage({
 }) {
   const fallbackSrc = useMemo(() => buildPlaceholder(title, category), [title, category]);
   const [hasError, setHasError] = useState(false);
-  const resolvedSrc = !src || hasError ? fallbackSrc : src;
+  const resolvedSrc = !src || hasError ? fallbackSrc : getOptimizedSrc(src);
 
   return (
     <img
