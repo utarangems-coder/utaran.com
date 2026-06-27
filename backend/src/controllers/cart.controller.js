@@ -1,18 +1,19 @@
 import User from "../models/User.model.js";
 import Product from "../models/Product.model.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 
 /* GET CART */
-export const getCart = async (req, res) => {
+export const getCart = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id).populate(
     "cart.product",
     "title price images quantity"
   );
 
   res.json(user.cart);
-};
+});
 
 /* ADD TO CART */
-export const addToCart = async (req, res) => {
+export const addToCart = asyncHandler(async (req, res) => {
   const { productId, quantity } = req.body;
 
   const product = await Product.findById(productId);
@@ -34,10 +35,10 @@ export const addToCart = async (req, res) => {
 
   await user.save();
   res.json(user.cart);
-};
+});
 
 /* UPDATE QUANTITY */
-export const updateCartItem = async (req, res) => {
+export const updateCartItem = asyncHandler(async (req, res) => {
   const { productId, quantity } = req.body;
 
   const user = await User.findById(req.user.id);
@@ -54,10 +55,10 @@ export const updateCartItem = async (req, res) => {
   await user.save();
 
   res.json(user.cart);
-};
+});
 
 /* REMOVE ITEM */
-export const removeCartItem = async (req, res) => {
+export const removeCartItem = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id);
 
   user.cart = user.cart.filter(
@@ -66,12 +67,12 @@ export const removeCartItem = async (req, res) => {
 
   await user.save();
   res.json(user.cart);
-};
+});
 
 /* CLEAR CART */
-export const clearCart = async (req, res) => {
+export const clearCart = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id);
   user.cart = [];
   await user.save();
   res.json([]);
-};
+});
