@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchProductById } from "../../api/product.api";
 import { addToCart } from "../../api/cart.api";
 import { ProductDetailsSkeleton } from "../../components/PageSkeleton";
 import ProductImage from "../../components/ProductImage";
 import { captureEvent } from "../../utils/posthog.js";
+import { useToast } from "../../context/ToastContext.jsx";
 
 export default function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const [product, setProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -110,6 +112,34 @@ export default function ProductDetails() {
           })}
         </script>
       )}
+      {product && (
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Archive",
+                "item": `${window.location.origin}/products`
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "name": product.category,
+                "item": `${window.location.origin}/products?category=${encodeURIComponent(product.category)}`
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "name": product.title,
+                "item": window.location.href
+              }
+            ]
+          })}
+        </script>
+      )}
       <style>{`
         @keyframes subtleGlow {
           0% { box-shadow: 0 0 5px rgba(255,255,255,0.1); }
@@ -123,7 +153,17 @@ export default function ProductDetails() {
       `}</style>
       
       <div className="flex-1 max-w-[1600px] mx-auto w-full px-4 sm:px-6 md:px-12 xl:px-16 py-6 md:py-8 flex flex-col">
-        
+        {/* BREADCRUMB NAVIGATION */}
+        <nav className="mb-8 flex items-center flex-wrap gap-2.5 text-[9px] tracking-[0.4em] uppercase text-white/40">
+          <Link to="/products" className="hover:text-white transition-colors duration-200">Archive</Link>
+          <span className="text-white/20 select-none">/</span>
+          <Link to={`/products?category=${encodeURIComponent(product.category)}`} className="hover:text-white transition-colors duration-200">
+            {product.category}
+          </Link>
+          <span className="text-white/20 select-none">/</span>
+          <span className="text-white/80 font-medium italic select-none">{product.title}</span>
+        </nav>
+
         <div className="flex-1 grid lg:grid-cols-12 gap-8 md:gap-12 xl:gap-20 items-start">
           
           {/* LEFT COLUMN */}
@@ -243,6 +283,7 @@ export default function ProductDetails() {
                       quantity: quantity,
                       totalAmount: product.price * quantity,
                     });
+                    showToast(`${product.title} has been successfully added to your bag.`, "success");
                     navigate("/cart");
                   }}
                   disabled={product?.quantity === 0}
