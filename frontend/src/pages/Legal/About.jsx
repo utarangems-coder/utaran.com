@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import CopyableText from "../../components/CopyableText";
 
 export default function About() {
   useEffect(() => {
@@ -62,7 +63,7 @@ export default function About() {
           </p>
 
           <p>
-            Questions? Reach us at [email] or [phone number].
+            Questions? Reach us at <CopyableText text="utarangems@gmail.com" label="email" isEmail /> or via Instagram at <CopyableText text="utaran.in" label="Instagram" isInstagram />.
           </p>
         </div>
 

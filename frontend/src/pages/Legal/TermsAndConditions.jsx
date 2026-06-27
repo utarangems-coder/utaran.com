@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import CopyableText from "../../components/CopyableText";
 
 export default function TermsAndConditions() {
   useEffect(() => {
@@ -131,7 +132,7 @@ export default function TermsAndConditions() {
               <li className="flex items-start gap-3">
                 <span className="mt-2 block w-1 h-1 rounded-full bg-gray-500 shrink-0" />
                 Orders can be cancelled only before they are shipped. Contact us
-                immediately at [email] to request a cancellation.
+                immediately at <CopyableText text="utarangems@gmail.com" label="email" isEmail /> or via Instagram at <CopyableText text="utaran.in" label="Instagram" isInstagram /> to request a cancellation.
               </li>
               <li className="flex items-start gap-3">
                 <span className="mt-2 block w-1 h-1 rounded-full bg-gray-500 shrink-0" />
@@ -176,8 +177,7 @@ export default function TermsAndConditions() {
             </p>
             <h2 className="text-white font-medium text-lg mb-4">Contact Us</h2>
             <p className="text-sm md:text-base text-gray-300 leading-relaxed">
-              For any questions about these terms, contact us at [email] or
-              [phone number].
+              For any questions about these terms, contact us at <CopyableText text="utarangems@gmail.com" label="email" isEmail /> or via Instagram at <CopyableText text="utaran.in" label="Instagram" isInstagram />.
             </p>
           </section>
         </div>

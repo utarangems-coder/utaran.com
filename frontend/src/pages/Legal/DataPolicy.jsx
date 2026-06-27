@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import CopyableText from "../../components/CopyableText";
 
 export default function PrivacyPolicy() {
   useEffect(() => {
@@ -168,7 +169,7 @@ export default function PrivacyPolicy() {
               Your Rights
             </h2>
             <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-4">
-              You can contact us at [email] at any time to:
+              You can contact us at <CopyableText text="utarangems@gmail.com" label="email" isEmail /> at any time to:
             </p>
             <ul className="space-y-2 pl-4">
               <li className="text-sm md:text-base text-gray-300 leading-relaxed flex items-start">
@@ -227,7 +228,7 @@ export default function PrivacyPolicy() {
             </h2>
             <p className="text-sm md:text-base text-gray-300 leading-relaxed">
               If you have any questions about this privacy policy or how your
-              data is handled, contact us at [email].
+              data is handled, contact us at <CopyableText text="utarangems@gmail.com" label="email" isEmail />.
             </p>
           </section>
         </div>

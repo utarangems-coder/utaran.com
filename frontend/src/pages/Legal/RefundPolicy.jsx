@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import CopyableText from "../../components/CopyableText";
 
 export default function RefundPolicy() {
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function RefundPolicy() {
               <li className="flex items-start gap-3">
                 <span className="mt-2 block h-1 w-1 rounded-full bg-gray-500 shrink-0" />
                 You may cancel an order only before it has been shipped, by
-                emailing us at [email] with your order details.
+                emailing us at <CopyableText text="utarangems@gmail.com" label="email" isEmail /> or via Instagram at <CopyableText text="utaran.in" label="Instagram" isInstagram /> with your order details.
               </li>
               <li className="flex items-start gap-3">
                 <span className="mt-2 block h-1 w-1 rounded-full bg-gray-500 shrink-0" />
@@ -73,7 +74,7 @@ export default function RefundPolicy() {
               <li className="flex items-start gap-3">
                 <span className="mt-2 block h-1 w-1 rounded-full bg-gray-500 shrink-0" />
                 Returns must be requested within [X] days of delivery by
-                emailing [email] with photos of the issue.
+                emailing <CopyableText text="utarangems@gmail.com" label="email" isEmail /> or via Instagram at <CopyableText text="utaran.in" label="Instagram" isInstagram /> with photos of the issue.
               </li>
             </ul>
           </section>
@@ -122,7 +123,7 @@ export default function RefundPolicy() {
               How to Request a Refund or Report an Issue
             </h2>
             <p className="text-sm md:text-base text-gray-300 leading-relaxed mb-4">
-              Email [email] with:
+              Email <CopyableText text="utarangems@gmail.com" label="email" isEmail /> or contact us via Instagram at <CopyableText text="utaran.in" label="Instagram" isInstagram /> with:
             </p>
             <ul className="space-y-3 text-sm md:text-base text-gray-300 leading-relaxed list-none mb-6">
               <li className="flex items-start gap-3">
