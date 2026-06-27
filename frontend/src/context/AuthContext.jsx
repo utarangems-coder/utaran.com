@@ -1,7 +1,7 @@
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState } from "react";
 import { loginUser, logoutUser, getMyProfile } from "../api/auth.api";
 import { useRef } from "react";
+import { identifyUser, resetUser } from "../utils/posthog.js";
 
 const AuthContext = createContext(null);
 
@@ -26,6 +26,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const profile = await getMyProfile();
       setUser(profile);
+      if (profile) {
+        identifyUser(profile._id, profile.email, {
+          name: profile.name,
+          role: profile.role,
+        });
+      }
     } catch {
       localStorage.removeItem("accessToken");
       setUser(null);
@@ -40,6 +46,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleGlobalLogout = () => {
       setUser(null);
+      resetUser();
     };
 
     window.addEventListener("auth-logout", handleGlobalLogout);
@@ -58,7 +65,9 @@ export const AuthProvider = ({ children }) => {
     await logoutUser();
     localStorage.removeItem("accessToken");
     setUser(null);
+    resetUser();
   };
+
 
   const updateUser = (updates) => {
     setUser((prev) => (prev ? { ...prev, ...updates } : prev));

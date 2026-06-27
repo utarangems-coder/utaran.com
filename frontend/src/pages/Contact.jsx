@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { captureEvent } from "../utils/posthog.js";
 
 export default function Contact() {
   const [copied, setCopied] = useState("");
@@ -6,6 +7,10 @@ export default function Contact() {
   const handleCopy = (text, label) => {
     navigator.clipboard.writeText(text);
     setCopied(label);
+    captureEvent("contact_info_copied", {
+      type: label,
+      content: text,
+    });
     setTimeout(() => setCopied(""), 2000);
   };
 

@@ -4,6 +4,7 @@ import { fetchProductById } from "../../api/product.api";
 import { addToCart } from "../../api/cart.api";
 import { ProductDetailsSkeleton } from "../../components/PageSkeleton";
 import ProductImage from "../../components/ProductImage";
+import { captureEvent } from "../../utils/posthog.js";
 
 export default function ProductDetails() {
   const { id } = useParams();
@@ -29,15 +30,36 @@ export default function ProductDetails() {
     void loadProduct();
   }, [loadProduct]);
 
+  useEffect(() => {
+    if (product) {
+      captureEvent("product_viewed", {
+        productId: product._id,
+        title: product.title,
+        price: product.price,
+        category: product.category,
+        quantityRemaining: product.quantity,
+        tags: product.tags,
+      });
+    }
+  }, [product]);
+
   const increment = () => { if (quantity < product.quantity) setQuantity((q) => q + 1); };
   const decrement = () => { if (quantity > 1) setQuantity((q) => q - 1); };
 
   const handleBuyNow = () => {
     if (!product || product.quantity === 0) return;
+    captureEvent("buy_now_clicked", {
+      productId: product._id,
+      title: product.title,
+      price: product.price,
+      quantity: quantity,
+      totalAmount: product.price * quantity,
+    });
     navigate(`/checkout?productId=${product._id}&quantity=${quantity}`, {
       state: { productId: product._id, quantity },
     });
   };
+
 
   if (loading) return <ProductDetailsSkeleton />;
 
@@ -187,6 +209,13 @@ export default function ProductDetails() {
                 <button
                   onClick={async () => {
                     await addToCart(product._id, quantity);
+                    captureEvent("add_to_cart", {
+                      productId: product._id,
+                      title: product.title,
+                      price: product.price,
+                      quantity: quantity,
+                      totalAmount: product.price * quantity,
+                    });
                     navigate("/cart");
                   }}
                   disabled={product?.quantity === 0}

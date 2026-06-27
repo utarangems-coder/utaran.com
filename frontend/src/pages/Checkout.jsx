@@ -14,6 +14,8 @@ import ProductImage from "../components/ProductImage";
 import { useAuth } from "../context/AuthContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckoutSkeleton } from "../components/PageSkeleton";
+import { captureEvent } from "../utils/posthog.js";
+
 
 const PAYMENT_STAGE_MIN_MS = 650;
 const ORDER_CONFIRMED_MIN_MS = 900;
@@ -52,6 +54,19 @@ export default function Checkout() {
       .then(setProduct)
       .finally(() => setLoading(false));
   }, [productId, navigate]);
+
+  useEffect(() => {
+    if (product) {
+      captureEvent("checkout_initiated", {
+        productId: product._id,
+        title: product.title,
+        price: product.price,
+        quantity: quantity,
+        totalAmount: product.price * quantity,
+      });
+    }
+  }, [product, quantity]);
+
 
   const loadCheckoutStatus = useCallback(async () => {
     if (!productId) return;
@@ -218,6 +233,15 @@ export default function Checkout() {
       return;
     }
     if (!user.address || processing) return;
+
+    captureEvent("payment_initiated", {
+      productId: product._id,
+      title: product.title,
+      price: product.price,
+      quantity: quantity,
+      totalAmount: total,
+    });
+
     clearPaymentOutcome();
     setProcessing(true);
     showPaymentStage("creating");
@@ -256,8 +280,28 @@ export default function Checkout() {
             await holdCurrentStage();
             showPaymentStage("confirmed");
             await holdCurrentStage(ORDER_CONFIRMED_MIN_MS);
+
+            captureEvent("payment_succeeded", {
+              productId: product._id,
+              title: product.title,
+              price: product.price,
+              quantity: quantity,
+              totalAmount: total,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+            });
+
             navigate("/dashboard");
           } catch (err) {
+            captureEvent("payment_failed", {
+              productId: product._id,
+              title: product.title,
+              price: product.price,
+              quantity: quantity,
+              totalAmount: total,
+              stage: "verification",
+              error: err.response?.data?.message || err.message,
+            });
             showFailure(buildFailure({ err, where: "Order Confirmation", charged: true }));
             resetPaymentProgress();
             await loadCheckoutStatus();
@@ -281,6 +325,16 @@ export default function Checkout() {
 
       if (typeof razorpay.on === "function") {
         razorpay.on("payment.failed", async (response) => {
+          captureEvent("payment_failed", {
+            productId: product._id,
+            title: product.title,
+            price: product.price,
+            quantity: quantity,
+            totalAmount: total,
+            stage: "authorization",
+            error: response?.error?.description,
+            reason: response?.error?.reason,
+          });
           showFailure(
             buildFailure({
               err: { response: { data: { message: response?.error?.description } } },
@@ -296,6 +350,15 @@ export default function Checkout() {
       razorpay.open();
       showPaymentStage("waiting");
     } catch (err) {
+      captureEvent("payment_failed", {
+        productId: product._id,
+        title: product.title,
+        price: product.price,
+        quantity: quantity,
+        totalAmount: total,
+        stage: "creation",
+        error: err.response?.data?.message || err.message,
+      });
       showFailure(buildFailure({ err, where: "Order Creation" }));
       resetPaymentProgress();
       await loadCheckoutStatus();
