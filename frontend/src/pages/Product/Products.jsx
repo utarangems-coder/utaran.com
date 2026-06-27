@@ -32,6 +32,10 @@ export default function Products() {
 
   const debouncedSearch = useDebounce(search, 400);
 
+  useEffect(() => {
+    document.title = "Archive — Utaran";
+  }, []);
+
   const loadProducts = useCallback(async (pageToLoad, replace = false) => {
     if (loadingRef.current) return;
     loadingRef.current = true;

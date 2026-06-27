@@ -32,6 +32,7 @@ export default function ProductDetails() {
 
   useEffect(() => {
     if (product) {
+      document.title = `${product.title} — Utaran`;
       captureEvent("product_viewed", {
         productId: product._id,
         title: product.title,
@@ -83,6 +84,32 @@ export default function ProductDetails() {
 
   return (
     <main className="min-h-screen bg-[#080808] text-white selection:bg-white selection:text-black antialiased flex flex-col">
+      {product && (
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": product.title,
+            "image": product.images || [],
+            "description": product.description,
+            "sku": `UTR-${product._id.slice(-6).toUpperCase()}`,
+            "brand": {
+              "@type": "Brand",
+              "name": "Utaran"
+            },
+            "offers": {
+              "@type": "Offer",
+              "url": window.location.href,
+              "priceCurrency": "INR",
+              "price": product.price,
+              "itemCondition": "https://schema.org/NewCondition",
+              "availability": product.quantity > 0 
+                ? "https://schema.org/InStock" 
+                : "https://schema.org/OutOfStock"
+            }
+          })}
+        </script>
+      )}
       <style>{`
         @keyframes subtleGlow {
           0% { box-shadow: 0 0 5px rgba(255,255,255,0.1); }
