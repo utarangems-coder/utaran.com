@@ -205,7 +205,7 @@ export const createPayment = asyncHandler(async (req, res) => {
     }
   }
 
-  const session = await mongoose.startSession();
+  let session = await mongoose.startSession();
 
   let reservation;
   let payment;
