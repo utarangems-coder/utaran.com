@@ -15,7 +15,7 @@ export default function Contact() {
   };
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black antialiased py-24 px-6 md:px-12 overflow-hidden">
+    <main className="page-transition min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black antialiased py-24 px-6 md:px-12 overflow-hidden">
       <div className="max-w-4xl mx-auto space-y-20">
         <header className="text-center space-y-6">
           <span className="text-[10px] tracking-[0.8em] uppercase text-white/40 font-bold block">

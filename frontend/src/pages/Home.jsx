@@ -40,7 +40,7 @@ export default function Home() {
     `https://res.cloudinary.com/dwp1yaelk/image/upload/f_auto,q_auto,w_${width},c_scale/${url}`;
 
   return (
-    <main className="bg-[#080808] text-white selection:bg-white selection:text-black antialiased overflow-x-hidden">
+    <main className="page-transition bg-[#080808] text-white selection:bg-white selection:text-black antialiased overflow-x-hidden">
       <style>{`
         @keyframes revealUp {
           from { opacity: 0; transform: translateY(20px); }

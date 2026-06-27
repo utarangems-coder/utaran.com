@@ -370,7 +370,7 @@ export default function Checkout() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black antialiased overflow-x-hidden flex flex-col items-center">
+    <main className="page-transition min-h-screen bg-[#050505] text-white selection:bg-white selection:text-black antialiased overflow-x-hidden flex flex-col items-center">
       <style>{`
         @keyframes pulseGlow {
           0% { box-shadow: 0 0 0px rgba(255,255,255,0); }

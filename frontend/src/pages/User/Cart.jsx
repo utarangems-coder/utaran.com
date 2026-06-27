@@ -56,7 +56,7 @@ export default function Cart() {
   }
 
   return (
-    <main className="min-h-screen bg-[#080808] text-white selection:bg-white selection:text-black antialiased overflow-x-hidden">
+    <main className="page-transition min-h-screen bg-[#080808] text-white selection:bg-white selection:text-black antialiased overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-8 md:px-12 py-20">
         
         {/* EDITORIAL HEADER */}

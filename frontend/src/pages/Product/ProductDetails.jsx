@@ -85,7 +85,7 @@ export default function ProductDetails() {
   }
 
   return (
-    <main className="min-h-screen bg-[#080808] text-white selection:bg-white selection:text-black antialiased flex flex-col">
+    <main className="page-transition min-h-screen bg-[#080808] text-white selection:bg-white selection:text-black antialiased flex flex-col">
       {product && (
         <script type="application/ld+json">
           {JSON.stringify({

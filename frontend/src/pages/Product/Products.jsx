@@ -98,7 +98,7 @@ export default function Products() {
   };
 
   return (
-    <main className="min-h-screen bg-[#080808] text-white selection:bg-white selection:text-black antialiased overflow-x-hidden">
+    <main className="page-transition min-h-screen bg-[#080808] text-white selection:bg-white selection:text-black antialiased overflow-x-hidden">
       <style>{`
         @keyframes reveal {
           from { opacity: 0; transform: translateY(15px); filter: blur(5px); }

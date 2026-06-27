@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 function escapeXml(value = "") {
   return String(value)
@@ -73,16 +73,41 @@ export default function ProductImage({
 }) {
   const fallbackSrc = useMemo(() => buildPlaceholder(title, category), [title, category]);
   const [hasError, setHasError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  
   const resolvedSrc = !src || hasError ? fallbackSrc : getOptimizedSrc(src);
 
+  // Reset loading state when the source URL changes
+  useEffect(() => {
+    setIsLoaded(false);
+  }, [src]);
+
+  const isFallback = resolvedSrc === fallbackSrc;
+
   return (
-    <img
-      key={src || fallbackSrc}
-      src={resolvedSrc}
-      alt={alt || title || "Product image"}
-      className={className}
-      onError={() => setHasError(true)}
-      {...props}
-    />
+    <div className="relative w-full h-full overflow-hidden bg-[#0a0a0a]">
+      {/* SVG Placeholder behind the loading image to prevent blank/layout jumps */}
+      {!isFallback && !isLoaded && (
+        <img
+          src={fallbackSrc}
+          alt="Loading placeholder"
+          className={`${className} absolute inset-0 w-full h-full object-cover select-none pointer-events-none`}
+        />
+      )}
+      
+      {/* Optimized WebP/AVIF Product Image with elegant fade-in transition */}
+      <img
+        key={resolvedSrc}
+        src={resolvedSrc}
+        alt={alt || title || "Product image"}
+        className={`${className} transition-opacity duration-700 ease-out`}
+        style={{
+          opacity: isFallback || isLoaded ? 1 : 0,
+        }}
+        onLoad={() => setIsLoaded(true)}
+        onError={() => setHasError(true)}
+        {...props}
+      />
+    </div>
   );
 }
