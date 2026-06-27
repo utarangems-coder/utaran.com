@@ -11,7 +11,11 @@ const startServer = async () => {
   try {
     await connectDB();
 
-    await reclaimExpiredStock();
+    try {
+      await reclaimExpiredStock();
+    } catch (reclaimErr) {
+      console.warn("[Startup Warning] Initial stock reclamation failed to run:", reclaimErr.message);
+    }
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
