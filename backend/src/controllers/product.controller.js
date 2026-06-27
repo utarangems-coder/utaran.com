@@ -1,6 +1,7 @@
 import Product from "../models/Product.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { isValidObjectId } from "../utils/isValidObject.js";
+import { reclaimExpiredStock } from "../services/reclaim.service.js";
 
 const MAX_PRODUCT_IMAGES = 4;
 
@@ -38,8 +39,6 @@ export const createProduct = asyncHandler(async (req, res) => {
     res.status(500).json({ message: error.message || "Failed to create product" });
   }
 });
-
-import { reclaimExpiredStock } from "../services/reclaim.service.js";
 
 export const getAllProducts = asyncHandler(async (req, res) => {
   const {
