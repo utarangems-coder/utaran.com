@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /checkout
+Disallow: /cart
+Disallow: /dashboard
+Disallow: /admin
+
+Sitemap: https://utaran.com/sitemap.xml
