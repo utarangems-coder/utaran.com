@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { registerUser } from "../../api/auth.api";
 import { useNavigate, Link } from "react-router-dom";
+import { useToast } from "../../context/ToastContext.jsx";
 
 export default function Register() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
@@ -54,9 +56,12 @@ export default function Register() {
 
     try {
       await registerUser(payload);
+      showToast("Registration Complete. Access Granted. Please authenticate.", "success");
       navigate("/login");
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      const errMsg = err.response?.data?.message || "Registration failed";
+      setError(errMsg);
+      showToast(errMsg, "error");
     } finally {
       setLoading(false);
     }

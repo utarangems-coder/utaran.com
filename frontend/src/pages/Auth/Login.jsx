@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useToast } from "../../context/ToastContext.jsx";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { showToast } = useToast();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,12 +21,15 @@ export default function Login() {
 
     try {
       await login({ email, password });
+      showToast("Access Authorized. Welcome back to the Archive.", "success");
       const from = location.state?.from 
         ? (location.state.from.pathname + (location.state.from.search || "")) 
         : "/dashboard";
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || "Credentials Invalid");
+      const errMsg = err.response?.data?.message || "Credentials Invalid";
+      setError(errMsg);
+      showToast(errMsg, "error");
     } finally {
       setLoading(false);
     }
